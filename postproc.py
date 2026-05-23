@@ -29,7 +29,7 @@ source_term = conf["Setup"]["BardeenPetterson"]
 # Reading the analysis files
 t, M_tot = READ_BOX_AVERAGE()
 r, Sigma, Tilt, Precession, L,  V_r, V_theta, V_phi, rho_mean, rho_V_r, rho_V_theta, rho_V_phi = READ_RADIAL_AVERAGE(n_average, n_r)
-# Tilt += Tilt_init
+Tilt += Tilt_init
 
 TiltMean = np.zeros(t.size)
 PrecessionMean = np.zeros(t.size)
@@ -231,7 +231,7 @@ for k in range(n_vtk):
     ax.plot(r, kappa_2_V/kappa_2_K, color="tab:blue", label=r"Idefix ($\overline{V}$)")
     ax.plot(r, kappa_2_rho_V/kappa_2_K, color="tab:green", label=r"Idefix ($\overline{\rho V}$)")
     ax.plot(r_vtk, kappa_2_th/kappa_2_K, color="black", linestyle="dashed", label=r"Theory")
-    ax.vlines(isco_th, 1e-2, 1e1, color="black", linestyle="dotted", label=r"Theoretical ISCO")
+    # ax.vlines(isco_th, 1e-2, 1e1, color="black", linestyle="dotted", label=r"Theoretical ISCO")
     ax.set_xlim((r_min-1, r_max))
     ax.set_xlabel(r"$r$")
     ax.set_yscale("log")

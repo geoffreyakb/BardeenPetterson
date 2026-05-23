@@ -70,6 +70,7 @@ void GravitomagneticTerm(Hydro *hydro, const real t, const real dtin) {
     real dt = dtin;
 
     real spin = spinGlob;
+    real tilt = tiltGlob;
     // -tilt so that the disk is "rotated" counterclockwise
     real Sx = spin * sin(-tilt);
     real Sy = ZERO_F;
