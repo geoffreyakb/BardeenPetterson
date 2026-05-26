@@ -4,8 +4,10 @@
 
 real epsilonGlob;
 real alphaGlob;
-real tiltGlob;
 real densityFloorGlob;
+enum GravityPotential {Kepler, Einstein, PW};
+GravityPotential gravityGlob;
+real tiltGlob;
 real spinGlob;
 
 Analysis *analysis;
@@ -53,9 +55,6 @@ void InternalBoundary(Hydro *hydro, const real t) {
                 KOKKOS_LAMBDA (int k, int j, int i) {
                     if(Vc(RHO,k,j,i) < densityFloor) {
                         Vc(RHO,k,j,i) = densityFloor;
-                        // Vc(VX1,k,j,i) = ZERO_F;
-                        // Vc(VX2,k,j,i) = ZERO_F;
-                        // Vc(VX3,k,j,i) = ZERO_F;
                     }
                 });
 }
@@ -70,8 +69,8 @@ void GravitomagneticTerm(Hydro *hydro, const real t, const real dtin) {
     real dt = dtin;
 
     real spin = spinGlob;
-    real tilt = tiltGlob;
-    // -tilt so that the disk is "rotated" counterclockwise
+    real tilt = tiltGlob * M_PI / 180;
+    // -tilt so that the initial precession is zero
     real Sx = spin * sin(-tilt);
     real Sy = ZERO_F;
     real Sz = spin * cos(-tilt);
@@ -120,19 +119,41 @@ void PaczynskiWiitaPotential(DataBlock &data, const real t, IdefixArray1D<real> 
     });
 }
 
+void KeplerPotential(DataBlock &data, const real t, IdefixArray1D<real> &x1, IdefixArray1D<real> &x2, IdefixArray1D<real> &x3, IdefixArray3D<real> &phi) {
+    idefix_for("KeplerPotential",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
+        KOKKOS_LAMBDA (int k, int j, int i) {
+            real r = x1(i);
+            phi(k,j,i) = - 1/r;
+    });
+}
+
+
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
     epsilonGlob = input.Get<real>("Setup", "epsilon", 0);
     alphaGlob = input.Get<real>("Setup", "alpha", 0);
-    tiltGlob = input.Get<real>("Setup", "tilt", 0);
     densityFloorGlob = input.Get<real>("Setup", "densityFloor", 0);
+    if (input.Get<std::string>("Setup", "gravity", 0) == "Kepler") gravityGlob = GravityPotential::Kepler;
+    else if (input.Get<std::string>("Setup", "gravity", 0) == "Einstein") gravityGlob = GravityPotential::Einstein;
+    else if (input.Get<std::string>("Setup", "gravity", 0) == "PW") gravityGlob = GravityPotential::PW;
+    else IDEFIX_ERROR("Input correct gravity potential.");
+    tiltGlob = input.Get<real>("Setup", "tilt", 0);
     spinGlob = input.Get<real>("Setup", "spin", 0);
 
     data.hydro->EnrollInternalBoundary(&InternalBoundary);
     data.hydro->EnrollIsoSoundSpeed(&MySoundSpeed);
     data.hydro->viscosity->EnrollViscousDiffusivity(&MyViscosity);
+    switch (gravityGlob) {
+        case GravityPotential::Kepler:
+            data.gravity->EnrollPotential(&KeplerPotential);
+        break;
+        case GravityPotential::Einstein:
+            data.gravity->EnrollPotential(&EinsteinPotential);
+        break;
+        case GravityPotential::PW:
+            data.gravity->EnrollPotential(&PaczynskiWiitaPotential);
+        break;
+    }
     data.hydro->EnrollUserSourceTerm(&GravitomagneticTerm);
-    // data.gravity->EnrollPotential(&EinsteinPotential);
-    // data.gravity->EnrollPotential(&PaczynskiWiitaPotential);
 
     analysis = new Analysis(input, grid, data);
     output.EnrollAnalysis(&AnalysisFunction);
@@ -154,14 +175,18 @@ void Setup::InitFlow(DataBlock &data) {
                 real cs = epsilon/sqrt(R);
 
                 real rho = 1.0/(R * sqrt(R)) * exp(1.0/pow(cs,2) * (1/r - 1/R));
-                d.Vc(VX1,k,j,i) = ZERO_F;
-                d.Vc(VX2,k,j,i) = ZERO_F;
-                if (rho > densityFloorGlob) {
+                if (rho >= densityFloorGlob) {
                     d.Vc(RHO,k,j,i) = rho;
-                    d.Vc(VX3,k,j,i) = Vk * sqrt(sin(th) - 2.5*pow(epsilon, 2));
                 }
                 else {
                     d.Vc(RHO,k,j,i) = densityFloorGlob;
+                }
+                d.Vc(VX1,k,j,i) = ZERO_F;
+                d.Vc(VX2,k,j,i) = ZERO_F;
+                if (sin(th) >= 2.5*pow(epsilon, 2)) {
+                    d.Vc(VX3,k,j,i) = Vk * sqrt(sin(th) - 2.5*pow(epsilon, 2));
+                }
+                else {
                     d.Vc(VX3,k,j,i) = ZERO_F;
                 }
             }
