@@ -40,7 +40,7 @@ r, Sigma, rho_mean, L, beta, gamma, LBH, betaBH, gammaBH, rho_Vr = READ_RADIAL_A
 t_orbit = 2*np.pi*(r_min**1.5) / np.sqrt(1 - 2.5*epsilon**2)       # This is an input
 omega_orbit = 1/t_orbit
 # n_orbit = (t[-1] // t_orbit)
-n_orbit = 1000
+n_orbit = 500
 t *= omega_orbit
 wh_t_final = np.where(t >= n_orbit)[0][0]
 T, R = np.meshgrid(t, r, indexing="ij")
@@ -529,7 +529,6 @@ for n in range(n_vtk):
     MASS_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, "xz", True, mass_zoom_xz_plots, f"mass_zoom_xz_{n}", t[n_analysis])
     MASS_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, "yz", False, mass_yz_plots, f"mass_yz_{n}", t[n_analysis])
     MASS_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, "yz", True, mass_zoom_yz_plots, f"mass_zoom_yz_{n}", t[n_analysis])
-
     # ---------------------------------------------------------------------------------------------------------------------------------------------------
 
     # velocity plots ------------------------------------------------------------------------------------------------------------------------
@@ -556,9 +555,9 @@ for n in range(n_vtk):
         "title_phi": r'$(v\times h)_\varphi/(\omega_0c_s)$ [$-$]',
         "beta_0": beta_0
     }
-    # VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, "xz", False, sourceTerm_xz_plots, f"sourceTerm_xz_{n}", t[n_analysis])
+    VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, "xz", False, sourceTerm_xz_plots, f"sourceTerm_xz_{n}", t[n_analysis])
     # VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, "xz", True, sourceTerm_zoom_xz_plots, f"sourceTerm_zoom_xz_{n}", t[n_analysis])
-    # VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, "yz", False, sourceTerm_yz_plots, f"sourceTerm_yz_{n}", t[n_analysis])
+    VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, "yz", False, sourceTerm_yz_plots, f"sourceTerm_yz_{n}", t[n_analysis])
     # VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, "yz", True, sourceTerm_zoom_yz_plots, f"sourceTerm_zoom_yz_{n}", t[n_analysis])
 
     quantities = {
@@ -570,9 +569,9 @@ for n in range(n_vtk):
         "title_phi": r'$- \frac{1}{\rho}\nabla_\varphi P(\omega_0c_s)$ [$-$]',
         "beta_0": beta_0
     }
-    # # VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, "xz", False, gradP_xz_plots, f"gradP_xz_{n}", t[n_analysis])
+    VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, "xz", False, gradP_xz_plots, f"gradP_xz_{n}", t[n_analysis])
     # VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, "xz", True, gradP_zoom_xz_plots, f"gradP_zoom_xz_{n}", t[n_analysis])
-    # # VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, "yz", False, gradP_yz_plots, f"gradP_yz_{n}", t[n_analysis])
+    VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, "yz", False, gradP_yz_plots, f"gradP_yz_{n}", t[n_analysis])
     # VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, "yz", True, gradP_zoom_yz_plots, f"gradP_zoom_yz_{n}", t[n_analysis])
 
     quantities = {
@@ -584,9 +583,9 @@ for n in range(n_vtk):
         "title_phi": r'$- (v \cdot \nabla) v_\varphi/(\omega_0c_s)$ [$-$]',
         "beta_0": beta_0
     }
-    # # VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, "xz", False, vAdv_xz_plots, f"vAdv_xz_{n}", t[n_analysis])
+    VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, "xz", False, vAdv_xz_plots, f"vAdv_xz_{n}", t[n_analysis])
     # VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, "xz", True, vAdv_zoom_xz_plots, f"vAdv_zoom_xz_{n}", t[n_analysis])
-    # # VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, "yz", False, vAdv_yz_plots, f"vAdv_yz_{n}", t[n_analysis])
+    VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, "yz", False, vAdv_yz_plots, f"vAdv_yz_{n}", t[n_analysis])
     # VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, "yz", True, vAdv_zoom_yz_plots, f"vAdv_zoom_yz_{n}", t[n_analysis])
 
     quantities = {
@@ -598,12 +597,12 @@ for n in range(n_vtk):
         "title_phi": r'$\text{S}_{\text{visc},\varphi}/(\omega_0c_s)$ [$-$]',
         "beta_0": beta_0
     }
-    # # VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, "xz", False, Svisc_xz_plots, f"Svisc_xz_{n}", t[n_analysis])
+    VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, "xz", False, Svisc_xz_plots, f"Svisc_xz_{n}", t[n_analysis])
     # VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, "xz", True, Svisc_zoom_xz_plots, f"Svisc_zoom_xz_{n}", t[n_analysis])
-    # # VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, "yz", False, Svisc_yz_plots, f"Svisc_yz_{n}", t[n_analysis])
+    VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, "yz", False, Svisc_yz_plots, f"Svisc_yz_{n}", t[n_analysis])
     # VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, "yz", True, Svisc_zoom_yz_plots, f"Svisc_zoom_yz_{n}", t[n_analysis])
 
-    # # momentum plots ------------------------------------------------------------------------------------------------------------------------
+    # momentum plots ------------------------------------------------------------------------------------------------------------------------
     quantities = {
         "q_r": rho*v_r/c_s,
         "q_th": rho*v_theta/c_s,
@@ -704,6 +703,8 @@ for n in range(n_vtk):
     VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, "yz", True, rho_velocityLoc_zoom_yz_plots, f"rho_velocityLoc_zoom_yz_{n}", t[n_analysis])
 
     # rotation curve plots ----------------------------------------------------------------------------------------------------------------------------
+    omega_K = KEPLER(r_vtk)
+
     fig, axs = plt.subplots(1, 2, figsize=(10, 5))
     ax = axs[0]
     ax.plot(r, omega**2/omega_K**2, color="tab:brown")
@@ -816,24 +817,24 @@ MOVIE(velocity_xz_plots, "velocity_xz")
 MOVIE(velocity_yz_plots, "velocity_yz")
 # MOVIE(velocity_zoom_yz_plots, "velocity_zoom_yz")
 
-# MOVIE(sourceTerm_xz_plots, "sourceTerm_xz")
+MOVIE(sourceTerm_xz_plots, "sourceTerm_xz")
 # MOVIE(sourceTerm_zoom_xz_plots, "sourceTerm_zoom_xz")
-# MOVIE(sourceTerm_yz_plots, "sourceTerm_yz")
+MOVIE(sourceTerm_yz_plots, "sourceTerm_yz")
 # MOVIE(sourceTerm_zoom_yz_plots, "sourceTerm_zoom_yz")
 
-# MOVIE(gradP_xz_plots, "gradP_xz")
+MOVIE(gradP_xz_plots, "gradP_xz")
 # MOVIE(gradP_zoom_xz_plots, "gradP_zoom_xz")
-# MOVIE(gradP_yz_plots, "gradP_yz")
+MOVIE(gradP_yz_plots, "gradP_yz")
 # MOVIE(gradP_zoom_yz_plots, "gradP_zoom_yz")
 
-# MOVIE(vAdv_xz_plots, "vAdv_xz")
+MOVIE(vAdv_xz_plots, "vAdv_xz")
 # MOVIE(vAdv_zoom_xz_plots, "vAdv_zoom_xz")
-# MOVIE(vAdv_yz_plots, "vAdv_yz")
+MOVIE(vAdv_yz_plots, "vAdv_yz")
 # MOVIE(vAdv_zoom_yz_plots, "vAdv_zoom_yz")
 
-# MOVIE(Svisc_xz_plots, "Svisc_xz")
+MOVIE(Svisc_xz_plots, "Svisc_xz")
 # MOVIE(Svisc_zoom_xz_plots, "Svisc_zoom_xz")
-# MOVIE(Svisc_yz_plots, "Svisc_yz")
+MOVIE(Svisc_yz_plots, "Svisc_yz")
 # MOVIE(Svisc_zoom_yz_plots, "Svisc_zoom_yz")
 
 # MOVIE(rho_velocity_xz_plots, "rho_velocity_xz")
