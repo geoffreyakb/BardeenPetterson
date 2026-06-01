@@ -4,8 +4,10 @@
 
 real epsilonGlob;
 real alphaGlob;
-real tiltGlob;
 real densityFloorGlob;
+enum GravityPotential {Kepler, Einstein, PW};
+GravityPotential gravityGlob;
+real tiltGlob;
 real spinGlob;
 
 Analysis *analysis;
@@ -52,10 +54,25 @@ void InternalBoundary(Hydro *hydro, const real t) {
                 0, data->np_tot[IDIR],
                 KOKKOS_LAMBDA (int k, int j, int i) {
                     if(Vc(RHO,k,j,i) < densityFloor) {
-                        Vc(RHO,k,j,i) = densityFloor;
+                        // real rho_old = Vc(RHO,k,j,i);
+                        // real rho_new = densityFloor;
+                        // real Vth_new = (rho_old/rho_new) * Vc(VX2,k,j,i);
+                        // real Vphi_new = (rho_old/rho_new) * Vc(VX3,k,j,i);
+                        // real Vr_new = - pow(Vth_new, 2) - pow(Vphi_new, 2) + (rho_old/rho_new) * (pow(Vc(VX1,k,j,i), 2) + pow(Vc(VX2,k,j,i), 2) + pow(Vc(VX3,k,j,i), 2));
+
+                        // if (Vc(VX1,k,j,i) >= 0) {
+                        //     Vr_new = sqrt(Vr_new);
+                        // }
+                        // else {
+                        //     Vr_new = - sqrt(Vr_new);
+                        // }
+
+                        // Vc(RHO,k,j,i) = rho_new;
                         // Vc(VX1,k,j,i) = ZERO_F;
                         // Vc(VX2,k,j,i) = ZERO_F;
-                        // Vc(VX3,k,j,i) = ZERO_F;
+                        // Vc(VX3,k,j,i) = Vphi_new;
+
+                        Vc(RHO,k,j,i) = densityFloor;
                     }
                 });
 }
@@ -69,8 +86,9 @@ void GravitomagneticTerm(Hydro *hydro, const real t, const real dtin) {
     IdefixArray1D<real> x3 = data->x[KDIR];
     real dt = dtin;
 
+    real tilt = tiltGlob;
     real spin = spinGlob;
-    // -tilt so that the disk is "rotated" counterclockwise
+    // -tilt so that the disk is "rotated" counterclockwise (gives an initial precession angle of 0)
     real Sx = spin * sin(-tilt);
     real Sy = ZERO_F;
     real Sz = spin * cos(-tilt);
@@ -103,6 +121,14 @@ void GravitomagneticTerm(Hydro *hydro, const real t, const real dtin) {
     });
 }
 
+void KeplerPotential(DataBlock &data, const real t, IdefixArray1D<real> &x1, IdefixArray1D<real> &x2, IdefixArray1D<real> &x3, IdefixArray3D<real> &phi) {
+    idefix_for("KeplerPotential",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
+        KOKKOS_LAMBDA (int k, int j, int i) {
+            real r = x1(i);
+            phi(k,j,i) = - 1/r;
+    });
+}
+
 void EinsteinPotential(DataBlock &data, const real t, IdefixArray1D<real> &x1, IdefixArray1D<real> &x2, IdefixArray1D<real> &x3, IdefixArray3D<real> &phi) {
     idefix_for("EinsteinPotential",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
         KOKKOS_LAMBDA (int k, int j, int i) {
@@ -122,16 +148,29 @@ void PaczynskiWiitaPotential(DataBlock &data, const real t, IdefixArray1D<real> 
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
     epsilonGlob = input.Get<real>("Setup", "epsilon", 0);
     alphaGlob = input.Get<real>("Setup", "alpha", 0);
-    tiltGlob = input.Get<real>("Setup", "tilt", 0);
     densityFloorGlob = input.Get<real>("Setup", "densityFloor", 0);
+    if (input.Get<std::string>("Setup", "gravity", 0) == "Kepler") gravityGlob = GravityPotential::Kepler;
+    else if (input.Get<std::string>("Setup", "gravity", 0) == "Einstein") gravityGlob = GravityPotential::Einstein;
+    else if (input.Get<std::string>("Setup", "gravity", 0) == "PW") gravityGlob = GravityPotential::PW;
+    else IDEFIX_ERROR("Input correct gravity potential.");
+    tiltGlob = input.Get<real>("Setup", "tilt", 0);
     spinGlob = input.Get<real>("Setup", "spin", 0);
 
     data.hydro->EnrollInternalBoundary(&InternalBoundary);
     data.hydro->EnrollIsoSoundSpeed(&MySoundSpeed);
     data.hydro->viscosity->EnrollViscousDiffusivity(&MyViscosity);
+    switch (gravityGlob) {
+        case GravityPotential::Kepler:
+            data.gravity->EnrollPotential(&KeplerPotential);
+        break;
+        case GravityPotential::Einstein:
+            data.gravity->EnrollPotential(&EinsteinPotential);
+        break;
+        case GravityPotential::PW:
+            data.gravity->EnrollPotential(&PaczynskiWiitaPotential);
+        break;
+    }
     data.hydro->EnrollUserSourceTerm(&GravitomagneticTerm);
-    // data.gravity->EnrollPotential(&EinsteinPotential);
-    // data.gravity->EnrollPotential(&PaczynskiWiitaPotential);
 
     analysis = new Analysis(input, grid, data);
     output.EnrollAnalysis(&AnalysisFunction);
@@ -152,15 +191,20 @@ void Setup::InitFlow(DataBlock &data) {
                 real Vk = 1.0/sqrt(R);
                 real cs = epsilon/sqrt(R);
 
-                real rho = 1.0/(R * sqrt(R)) * exp(1.0/pow(cs,2) * (1/r - 1/R));
+                // real rho = 1.0/(R * sqrt(R)) * exp(1.0/pow(cs,2) * (1/r - 1/R));
+                // if (rho >= densityFloorGlob) {
+                //     d.Vc(RHO,k,j,i) = rho;
+                // }
+                // else {
+                //     d.Vc(RHO,k,j,i) = densityFloorGlob;
+                // }
+                d.Vc(RHO,k,j,i) = 1.0/(R * sqrt(R)) * exp(1.0/pow(cs,2) * (1/r - 1/R));
                 d.Vc(VX1,k,j,i) = ZERO_F;
                 d.Vc(VX2,k,j,i) = ZERO_F;
-                if (rho > densityFloorGlob) {
-                    d.Vc(RHO,k,j,i) = rho;
+                if (sin(th) >= 2.5*pow(epsilon, 2)) {
                     d.Vc(VX3,k,j,i) = Vk * sqrt(sin(th) - 2.5*pow(epsilon, 2));
                 }
                 else {
-                    d.Vc(RHO,k,j,i) = densityFloorGlob;
                     d.Vc(VX3,k,j,i) = ZERO_F;
                 }
             }

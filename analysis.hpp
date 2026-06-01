@@ -31,6 +31,7 @@ class Analysis {
 
         real epsilon;
         real alpha;
+        real tiltInit;
 
         int countAverage;
         int precision;
@@ -44,13 +45,7 @@ class Analysis {
         int Lx;
         int Ly;
         int Lz;
-        int Vr;
-        int Vth;
-        int Vphi;
-        int rho;
         int rho_Vr;
-        int rho_Vth;
-        int rho_Vphi;
         IdefixHostArray2D<real> radialAverage;
         int global_NVARS;
         int Mtot;

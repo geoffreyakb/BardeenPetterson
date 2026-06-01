@@ -16,23 +16,17 @@ Analysis::Analysis(Input &input, Grid &grid, DataBlock &data) : grid(grid), gh(g
     this->alpha = input.Get<real>("Setup","alpha",0);
     // Output formatting
     this->countAverage = 0;
-    data.dump->RegisterVariable(&countAverage, "analysis_count_average");
+    data.dump->RegisterVariable(&countAverage, "analysis_count_average");       // DOES NOT WORK ???
     this->precision = 10;
     this->column_width = 2*precision;
     this->pathAnalysisFolder = "output/analysis/";
     // Radial averages (to update according to the number of radial profiles you want)
-    this->radial_NVARS = 11;
+    this->radial_NVARS = 5;
     this->Sigma = 0;
     this->Lx = 1;
     this->Ly = 2;
     this->Lz = 3;
-    this->Vr = 4;
-    this->Vth = 5;
-    this->Vphi = 6;
-    this->rho = 7;
-    this->rho_Vr = 8;
-    this->rho_Vth = 9;
-    this->rho_Vphi = 10;
+    this->rho_Vr = 4;
     this->radialAverage = IdefixHostArray2D<real> ("radialAverage", radial_NVARS, grid.np_int[IDIR]);
     // Global averages (to update according to the number of global diagnosis you want)
     this->global_NVARS = 1;
@@ -70,62 +64,11 @@ void Analysis::ComputeRadialAverage(IdefixHostArray4D<real> Vin) {
                 real ephi_ez = ZERO_F;
                 // Filling the local radial averages arrays
                 int glob_i = i + d.gbeg[IDIR] - 2*grid.nghost[IDIR];    // -nghost for the global ghosts -nghost for the local ones (i does not start at the "local 0")
-                loc_radialAverage(Sigma, glob_i) += Vin(RHO,k,j,i) * r * sin(th) * dth * dphi/(2*M_PI);      // Should be the same definition as Kimmig and Dullemond (2024)
-                loc_radialAverage(Lx, glob_i)    += Lr*er_ex + Lth*eth_ex + Lphi*ephi_ex;
-                loc_radialAverage(Ly, glob_i)    += Lr*er_ey + Lth*eth_ey + Lphi*ephi_ey;
-                loc_radialAverage(Lz, glob_i)    += Lr*er_ez + Lth*eth_ez + Lphi*ephi_ez;
-
-                // Getting the velocity in cartesian coordinates
-                real Vx = Vin(VX1,k,j,i)*er_ex + Vin(VX2,k,j,i)*eth_ex + Vin(VX3,k,j,i)*ephi_ex;
-                real Vy = Vin(VX1,k,j,i)*er_ey + Vin(VX2,k,j,i)*eth_ey + Vin(VX3,k,j,i)*ephi_ey;
-                real Vz = Vin(VX1,k,j,i)*er_ez + Vin(VX2,k,j,i)*eth_ez + Vin(VX3,k,j,i)*ephi_ez;
-
-                real norm = sqrt(pow(Lx,2) + pow(Ly,2) + pow(Lz,2));
-                real tilt_loc = acos(Lz / norm);
-                // Un-precess the disk only if the value is trust-worthy and not random due to numerical errors (ONLY IN 3D)
-                // real precession_loc = atan2(Ly, Lx);
-                // if (tilt_loc > 1e-9) {
-                    // ...
-                // }
-
-                // Unrotating the disk
-                real VxUnt = cos(-tilt_loc)*Vx + sin(-tilt_loc)*Vz;
-                real VyUnt = Vy;
-                real VzUnt = -sin(-tilt_loc)*Vx + cos(-tilt_loc)*Vz;
-                // Cartesian coordinates
-                real x = r * sin(th) * cos(phi);
-                real y = r * sin(th) * sin(phi);
-                real z = r * cos(th);
-                // Rotation around the y-axis (the -tilt is for a clockwise rotation around the y-axis if you set a positive angle)
-                real xUnt = cos(-tilt_loc)*x + sin(-tilt_loc)*z;
-                real yUnt = y;
-                real zUnt = -sin(-tilt_loc)*x + cos(-tilt_loc)*z;
-                // Back to spherical coordinates
-                real rUnt = sqrt(xUnt*xUnt + yUnt*yUnt + zUnt*zUnt);
-                real thUnt = acos(zUnt/rUnt);
-                real phiUnt = atan2(yUnt,xUnt);
-                
-                real ex_er = sin(thUnt)*cos(phiUnt);
-                real ex_eth = cos(thUnt)*cos(phiUnt);
-                real ex_ephi = -sin(phiUnt);
-                real ey_er = sin(thUnt)*sin(phiUnt);
-                real ey_eth = cos(thUnt)*sin(phiUnt);
-                real ey_ephi = cos(phiUnt);
-                real ez_er = cos(thUnt);
-                real ez_eth = -sin(thUnt);
-                real ez_ephi = ZERO_F;
-                // Passing the velocity in the untilted version of the local blob of the disk
-                real VrUnt = VxUnt*ex_er + VyUnt*ey_er + VzUnt*ez_er;
-                real VthUnt = VxUnt*ex_eth + VyUnt*ey_eth + VzUnt*ez_eth;
-                real VphiUnt = VxUnt*ex_ephi + VyUnt*ey_ephi + VzUnt*ez_ephi;
-
-                loc_radialAverage(Vr, glob_i)       += VrUnt * sin(th) * dth * dphi / (4*M_PI);
-                loc_radialAverage(Vth, glob_i)      += VthUnt * sin(th) * dth * dphi / (4*M_PI);
-                loc_radialAverage(Vphi, glob_i)     += VphiUnt * sin(th) * dth * dphi / (4*M_PI);
-                loc_radialAverage(rho, glob_i)      += Vin(RHO,k,j,i) * sin(th) * dth * dphi / (4*M_PI);  
-                loc_radialAverage(rho_Vr, glob_i)    += Vin(RHO,k,j,i) * VrUnt * sin(th) * dth * dphi / (4*M_PI);
-                loc_radialAverage(rho_Vth, glob_i)   += Vin(RHO,k,j,i) * VthUnt * sin(th) * dth * dphi / (4*M_PI);
-                loc_radialAverage(rho_Vphi, glob_i)  += Vin(RHO,k,j,i) * VphiUnt * sin(th) * dth * dphi / (4*M_PI);
+                loc_radialAverage(Sigma, glob_i)    += Vin(RHO,k,j,i) * r * sin(th) * dth * dphi / (2*M_PI);      // Should be the same definition as Kimmig and Dullemond (2024)
+                loc_radialAverage(Lx, glob_i)       += Lr*er_ex + Lth*eth_ex + Lphi*ephi_ex;
+                loc_radialAverage(Ly, glob_i)       += Lr*er_ey + Lth*eth_ey + Lphi*ephi_ey;
+                loc_radialAverage(Lz, glob_i)       += Lr*er_ez + Lth*eth_ez + Lphi*ephi_ez;
+                loc_radialAverage(rho_Vr, glob_i)   += Vin(RHO,k,j,i) * Vin(VX1,k,j,i) * sin(th) * dth * dphi / (4*M_PI);
             }
         }
     }
@@ -192,13 +135,7 @@ void Analysis::WriteRadialAverage() {
         fileRadialAverage << std::setw(column_width) << "Lx";
         fileRadialAverage << std::setw(column_width) << "Ly";
         fileRadialAverage << std::setw(column_width) << "Lz";
-        fileRadialAverage << std::setw(column_width) << "Vr";
-        fileRadialAverage << std::setw(column_width) << "Vth";
-        fileRadialAverage << std::setw(column_width) << "Vphi";
-        fileRadialAverage << std::setw(column_width) << "rho";
         fileRadialAverage << std::setw(column_width) << "rho_Vr";
-        fileRadialAverage << std::setw(column_width) << "rho_Vth";
-        fileRadialAverage << std::setw(column_width) << "rho_Vphi";
         fileRadialAverage << std::endl;
 
         for (int i = 0 ; i < grid.np_int[IDIR] ; i++) {
