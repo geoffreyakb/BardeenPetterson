@@ -777,7 +777,7 @@ for n in range(n_vtk):
     PHI, TH, R = np.meshgrid(phi_3D, theta_3D, r_3D, indexing="ij")
     X, Y, Z = R*np.sin(TH)*np.cos(PHI), R*np.sin(TH)*np.sin(PHI), R*np.cos(TH)
 
-    wh = rho > 0.05
+    wh = (rho > 0.05) & (rho < 0.1)
     facecolors = np.where(wh, 'tab:blue', 'none')
     ax.voxels(X,Y,Z, wh, facecolors=facecolors)
 
