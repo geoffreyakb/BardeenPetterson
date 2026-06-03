@@ -54,24 +54,6 @@ void InternalBoundary(Hydro *hydro, const real t) {
                 0, data->np_tot[IDIR],
                 KOKKOS_LAMBDA (int k, int j, int i) {
                     if(Vc(RHO,k,j,i) < densityFloor) {
-                        // real rho_old = Vc(RHO,k,j,i);
-                        // real rho_new = densityFloor;
-                        // real Vth_new = (rho_old/rho_new) * Vc(VX2,k,j,i);
-                        // real Vphi_new = (rho_old/rho_new) * Vc(VX3,k,j,i);
-                        // real Vr_new = - pow(Vth_new, 2) - pow(Vphi_new, 2) + (rho_old/rho_new) * (pow(Vc(VX1,k,j,i), 2) + pow(Vc(VX2,k,j,i), 2) + pow(Vc(VX3,k,j,i), 2));
-
-                        // if (Vc(VX1,k,j,i) >= 0) {
-                        //     Vr_new = sqrt(Vr_new);
-                        // }
-                        // else {
-                        //     Vr_new = - sqrt(Vr_new);
-                        // }
-
-                        // Vc(RHO,k,j,i) = rho_new;
-                        // Vc(VX1,k,j,i) = ZERO_F;
-                        // Vc(VX2,k,j,i) = ZERO_F;
-                        // Vc(VX3,k,j,i) = Vphi_new;
-
                         Vc(RHO,k,j,i) = densityFloor;
                     }
                 });
@@ -179,6 +161,7 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
 void Setup::InitFlow(DataBlock &data) {
     DataBlockHost d(data);
     real epsilon = epsilonGlob;
+    real spin = spinGlob;
     real r, th;
 
     for(int k = 0; k < d.np_tot[KDIR]; k++) {
@@ -191,22 +174,26 @@ void Setup::InitFlow(DataBlock &data) {
                 real Vk = 1.0/sqrt(R);
                 real cs = epsilon/sqrt(R);
 
-                // real rho = 1.0/(R * sqrt(R)) * exp(1.0/pow(cs,2) * (1/r - 1/R));
-                // if (rho >= densityFloorGlob) {
-                //     d.Vc(RHO,k,j,i) = rho;
-                // }
-                // else {
-                //     d.Vc(RHO,k,j,i) = densityFloorGlob;
-                // }
                 d.Vc(RHO,k,j,i) = 1.0/(R * sqrt(R)) * exp(1.0/pow(cs,2) * (1/r - 1/R));
                 d.Vc(VX1,k,j,i) = ZERO_F;
                 d.Vc(VX2,k,j,i) = ZERO_F;
-                if (sin(th) >= 2.5*pow(epsilon, 2)) {
-                    d.Vc(VX3,k,j,i) = Vk * sqrt(sin(th) - 2.5*pow(epsilon, 2));
+                
+                real a = 1/r;
+                real b = 2*sin(th)*spin/pow(r,3);
+                real c;
+                switch (gravityGlob) {
+                    case GravityPotential::Kepler:
+                        c = - 1/pow(r,2);
+                    break;
+                    case GravityPotential::Einstein:
+                        c = - 1/pow(r,2) - 6/pow(r,3);
+                    break;
+                    case GravityPotential::PW:
+                        c = - 1 / pow(r-2, 2);
+                    break;
                 }
-                else {
-                    d.Vc(VX3,k,j,i) = ZERO_F;
-                }
+                real delta = pow(b,2) - 4*a*c;
+                d.Vc(VX3,k,j,i) = (-b + sqrt(delta)) / (2*a);
             }
         }
     }

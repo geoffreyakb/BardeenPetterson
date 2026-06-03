@@ -11,7 +11,7 @@ import matplotlib.ticker as tkr
 import matplotlib.colors as mcolors
 
 w, l, l_log = 1.25, 10, 6
-pad, lpad, shrink = 0.1, 5, 0.8
+pad, lpad, shrink = 0.05, 5, 0.8
 formats = tkr.FormatStrFormatter('%.1e')
 
 def READ_BOX_AVERAGE():
@@ -126,189 +126,187 @@ def MOVIE(plots, name):
     video_summary = cv2.VideoWriter(filename=f"./plots/{name}.mp4", fourcc=fourcc, fps=fps, frameSize=(width, height))
     for image in images:
         video_summary.write(cv2.imread(image))
-    cv2.destroyAllWindows()
+    # cv2.destroyAllWindows()
     video_summary.release()
 
-def MASS_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, cut, zoom, list_plots, plots_name, time):
+def MASS_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, zoom, list_plots, plots_name, time):
     densityFloor = quantities["densityFloor"]
     rho = quantities["rho"]
-    inflow = quantities["inflow"]
-    beta_0 = quantities["beta_0"]
+    # E_K = quantities["E_K"]
+    # L2 = quantities["L2"]
 
     R, TH = np.meshgrid(r_vtk, theta_vtk)
-    if (cut == "xz"):
-        phi_cut_plus = np.where(phi_vtk >= 0)[0][0]
-        phi_cut_minus = np.where(phi_vtk >= np.pi)[0][0]
-        X_cut_plus, X_cut_minus, Z = R*np.sin(TH)*np.cos(phi_vtk[phi_cut_plus]), R*np.sin(TH)*np.cos(phi_vtk[phi_cut_minus]), R*np.cos(TH)
-        x_label = r"$x$ [$R_g$]"
-    elif cut == "yz":
-        phi_cut_plus = np.where(phi_vtk >= np.pi/2)[0][0]
-        phi_cut_minus = np.where(phi_vtk >= 3*np.pi/2)[0][0]
-        X_cut_plus, X_cut_minus, Z = R*np.sin(TH)*np.sin(phi_vtk[phi_cut_plus]), R*np.sin(TH)*np.sin(phi_vtk[phi_cut_minus]), R*np.cos(TH)
-        x_label = r"$y$ [$R_g$]"
+    phi_cut_plus = np.where(phi_vtk >= 0)[0][0]
+    X_cut_plus, Z = R*np.sin(TH)*np.cos(phi_vtk[phi_cut_plus]), R*np.cos(TH)
+    x_label = r"$x$ [$R_g$]"
     y_label = r"$z$ [$R_g$]"
-    x_plus = X_cut_plus.flatten()
-    x_minus = X_cut_minus.flatten()
 
-    fig, axs = plt.subplots(1, 2, gridspec_kw={'wspace': 0.01}, figsize=(10, 6.5))
+    fig, axs = plt.subplots(1, figsize=(5, 12))
    
-    ax = axs[0]
-    ax.set_title(r'$\log(\rho/\rho_0)$ [$-$]')
+    ax = axs
+    ax.set_title(r'$\log(\rho/\rho_0)$ $[-]$')
     ticks = np.linspace(np.log10(densityFloor), 0, 5)
     pc0 = ax.pcolormesh(X_cut_plus, Z, np.log10(rho[phi_cut_plus,:,:]), cmap="inferno", vmin=np.log10(densityFloor), vmax=0)
-    pc0 = ax.pcolormesh(X_cut_minus, Z, np.log10(rho[phi_cut_minus,:,:]), cmap="inferno", vmin=np.log10(densityFloor), vmax=0)
     formats = tkr.FormatStrFormatter('%.0f')
     cbar = fig.colorbar(pc0, ax=ax, location="bottom", pad=pad, shrink=shrink, format=formats, ticks=ticks)
-    if cut == "xz" and (beta_0 != 0):
-        wh = (x_plus > 1/np.sqrt(1 + 1/np.sin(-beta_0)**2)) & (x_plus < r_max/np.sqrt(1 + 1/np.sin(-beta_0)**2))
-        ax.plot(x_plus[wh], x_plus[wh]/np.sin(-beta_0), color="white")
-        wh = (x_minus < -1/np.sqrt(1 + 1/np.sin(-beta_0)**2)) & (x_minus > -r_max/np.sqrt(1 + 1/np.sin(-beta_0)**2))
-        ax.plot(x_minus[wh], x_minus[wh]/np.sin(-beta_0), color="white")
-    else:
-        ax.vlines(0, -r_max, -r_min, color="white")
-        ax.vlines(0, r_min, r_max, color="white")
     ax.tick_params(axis='both', direction='in', color='white', width=w, length=l, pad=lpad)
-    ax.set_facecolor("black")
+    ax.set_facecolor("dimgray")
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
     if zoom == True:
-        ax.set_xlim((-3*r_min,3*r_min))
-        xplot = np.linspace(-5*r_min, 5*r_min, 5)
+        ax.set_xlim((0,5*r_min))
+        xplot = np.linspace(0, 5*r_min, 5)
         xl = [f"{i:.1f}" for i in xplot]
         xl[0] = ""
         xl[-1] = ""
         ax.set_xticks(xplot,xl)
         ax.set_ylim((-5*r_min, 5*r_min))
-        ax.set_yticks(xplot)
+        yplot = np.linspace(-5*r_min, 5*r_min, 5)
+        ax.set_yticks(yplot)
     elif zoom == False:
-        ax.set_xlim((-r_max,r_max))
-        xplot = np.linspace(-r_max, r_max, 5)
+        ax.set_xlim((0,r_max))
+        xplot = np.linspace(0, r_max, 5)
         xl = [f"{i:.0f}" for i in xplot]
         xl[0] = ""
         xl[-1] = ""
         ax.set_xticks(xplot,xl)
         ax.set_ylim((-r_max, r_max))
-        ax.set_yticks(xplot)
+        yplot = np.linspace(-r_max, r_max, 5)
+        ax.set_yticks(yplot)
     ax.yaxis.set_ticks_position('both')
     ax.xaxis.set_ticks_position('both')
     for spine in ax.spines.values():
         spine.set_linewidth(w)
 
-    ax = axs[1]
-    ax.set_title(r'$(-\rho v_r)/(\rho_0 c_s)$ [$-$]')
-    buff = np.max(np.abs(inflow))
-    ticks = np.linspace(-buff, buff, 5)
-    pc0 = ax.pcolormesh(X_cut_plus, Z, inflow[phi_cut_plus,:,:], cmap="berlin", vmin=-buff, vmax=buff)
-    pc0 = ax.pcolormesh(X_cut_minus, Z, inflow[phi_cut_plus,:,:], cmap="berlin", vmin=-buff, vmax=buff)
-    formats = tkr.FormatStrFormatter('%.1e')
-    cbar = fig.colorbar(pc0, ax=ax, location="bottom", pad=pad, shrink=shrink, format=formats, ticks=ticks)
-    if cut == "xz" and (beta_0 != 0):
-        wh = (x_plus > 1/np.sqrt(1 + 1/np.sin(-beta_0)**2)) & (x_plus < r_max/np.sqrt(1 + 1/np.sin(-beta_0)**2))
-        ax.plot(x_plus[wh], x_plus[wh]/np.sin(-beta_0), color="white")
-        wh = (x_minus < -1/np.sqrt(1 + 1/np.sin(-beta_0)**2)) & (x_minus > -r_max/np.sqrt(1 + 1/np.sin(-beta_0)**2))
-        ax.plot(x_minus[wh], x_minus[wh]/np.sin(-beta_0), color="white")
-    else:
-        ax.vlines(0, -r_max, -r_min, color="white")
-        ax.vlines(0, r_min, r_max, color="white")
-    ax.tick_params(axis='both', direction='in', color='white', width=w, length=l, pad=lpad)
-    ax.set_facecolor("black")
-    ax.set_xlabel(x_label)
-    ax.set_ylabel(y_label)
-    if zoom == True:
-        ax.set_xlim((-5*r_min,5*r_min))
-        xplot = np.linspace(-5*r_min, 5*r_min, 5)
-        xl = [f"{i:.1f}" for i in xplot]
-        xl[0] = ""
-        xl[-1] = ""
-        ax.set_xticks(xplot,xl)
-        ax.set_ylim((-5*r_min, 5*r_min))
-        ax.set_yticks(xplot)
-    elif zoom == False:
-        ax.set_xlim((-r_max,r_max))
-        xplot = np.linspace(-r_max, r_max, 5)
-        xl = [f"{i:.0f}" for i in xplot]
-        xl[0] = ""
-        xl[-1] = ""
-        ax.set_xticks(xplot,xl)
-        ax.set_ylim((-r_max, r_max))
-        ax.set_yticks(xplot)
-    ax.yaxis.set_label_position("right")
-    ax.yaxis.tick_right()
-    ax.yaxis.set_ticks_position('both')
-    ax.xaxis.set_ticks_position('both')
-    for spine in ax.spines.values():
-        spine.set_linewidth(w)
+    # ax = axs[1]
+    # ax.set_title(r'$E_K / (\rho_0 c_s^2)$ $[-]$')
+    # buff = np.max(np.abs(E_K))
+    # ticks = np.linspace(0, buff, 5)
+    # pc0 = ax.pcolormesh(X_cut_plus, Z, E_K[phi_cut_plus,:,:], cmap="inferno", vmin=0, vmax=buff)
+    # formats = tkr.FormatStrFormatter('%.1f')
+    # cbar = fig.colorbar(pc0, ax=ax, location="bottom", pad=pad, shrink=shrink, format=formats, ticks=ticks)
+    # ax.tick_params(axis='both', direction='in', color='white', width=w, length=l, pad=lpad)
+    # ax.set_facecolor("dimgray")
+    # ax.set_xlabel(x_label)
+    # if zoom == True:
+    #     ax.set_xlim((0,5*r_min))
+    #     xplot = np.linspace(0, 5*r_min, 5)
+    #     xl = [f"{i:.1f}" for i in xplot]
+    #     xl[0] = ""
+    #     xl[-1] = ""
+    #     ax.set_xticks(xplot,xl)
+    #     ax.set_ylim((-5*r_min, 5*r_min))
+    #     yplot = np.linspace(-5*r_min, 5*r_min,5)
+    #     yl = ["" for i in yplot]
+    #     ax.set_yticks(yplot, yl)
+    # elif zoom == False:
+    #     ax.set_xlim((0,r_max))
+    #     xplot = np.linspace(0, r_max, 5)
+    #     xl = [f"{i:.0f}" for i in xplot]
+    #     xl[0] = ""
+    #     xl[-1] = ""
+    #     ax.set_xticks(xplot,xl)
+    #     ax.set_ylim((-r_max, r_max))
+    #     yplot = np.linspace(-r_max, r_max, 5)
+    #     yl = ["" for i in yplot]
+    #     ax.set_yticks(yplot, yl)
+    # ax.yaxis.set_ticks_position('both')
+    # ax.xaxis.set_ticks_position('both')
+    # for spine in ax.spines.values():
+    #     spine.set_linewidth(w)
 
-    fig.suptitle(r"$t/t_\text{orbit} =$ " + f"{time:.0f}")
+    # ax = axs[2]
+    # ax.set_title(r'$L^2 / (\rho_0^2 R_g^2 c_s^2)$ $[-]$')
+    # buff = np.max(np.abs(L2))
+    # ticks = np.linspace(0, buff, 5)
+    # pc0 = ax.pcolormesh(X_cut_plus, Z, L2[phi_cut_plus,:,:], cmap="inferno", vmin=0, vmax=buff)
+    # formats = tkr.FormatStrFormatter('%.1f')
+    # cbar = fig.colorbar(pc0, ax=ax, location="bottom", pad=pad, shrink=shrink, format=formats, ticks=ticks)
+    # ax.tick_params(axis='both', direction='in', color='white', width=w, length=l, pad=lpad)
+    # ax.set_facecolor("dimgray")
+    # ax.set_xlabel(x_label)
+    # ax.set_ylabel(y_label)
+    # if zoom == True:
+    #     ax.set_xlim((0,3*r_min))
+    #     xplot = np.linspace(0, 5*r_min, 5)
+    #     xl = [f"{i:.1f}" for i in xplot]
+    #     xl[0] = ""
+    #     xl[-1] = ""
+    #     ax.set_xticks(xplot,xl)
+    #     ax.set_ylim((-5*r_min, 5*r_min))
+    #     yplot = np.linspace(-5*r_min, 5*r_min,5)
+    #     yl = ["" for i in yplot]
+    #     ax.set_yticks(yplot, yl)
+    # elif zoom == False:
+    #     ax.set_xlim((0,r_max))
+    #     xplot = np.linspace(0, r_max, 5)
+    #     xl = [f"{i:.0f}" for i in xplot]
+    #     xl[0] = ""
+    #     xl[-1] = ""
+    #     ax.set_xticks(xplot,xl)
+    #     ax.set_ylim((-r_max, r_max))
+    #     yplot = np.linspace(-r_max, r_max, 5)
+    #     yl = ["" for i in yplot]
+    #     ax.set_yticks(yplot, yl)
+    # ax.yaxis.set_label_position("right")
+    # ax.yaxis.tick_right()
+    # ax.yaxis.set_ticks_position('both')
+    # ax.xaxis.set_ticks_position('both')
+    # for spine in ax.spines.values():
+    #     spine.set_linewidth(w)
+
+    fig.suptitle(r"$t\omega_\mathrm{orbit} =$ " + f"{time:.0f}", x=0.5, y=0.98)
     fig.tight_layout()
     plt.savefig(f"./output/plots/{plots_name}.png", bbox_inches='tight', dpi=300)
     plt.close()
     list_plots.append(f"./output/plots/{plots_name}.png")
 
-def VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, cut, zoom, list_plots, plots_name, time):
+def VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, zoom, list_plots, plots_name, time):
     q_r = quantities["q_r"]
     q_th = quantities["q_th"]
     q_phi = quantities["q_phi"]
     title_r = quantities["title_r"]
     title_th = quantities["title_th"]
     title_phi = quantities["title_phi"]
-    beta_0 = quantities["beta_0"]
 
-    # coordinates -----------------------------------------------------------------------------------------------------------------------
     R, TH = np.meshgrid(r_vtk, theta_vtk)
-    if cut == "xz":
-        phi_cut_plus = np.where(phi_vtk >= 0)[0][0]
-        phi_cut_minus = np.where(phi_vtk >= np.pi)[0][0]
-        X_cut_plus, X_cut_minus, Z = R*np.sin(TH)*np.cos(phi_vtk[phi_cut_plus]), R*np.sin(TH)*np.cos(phi_vtk[phi_cut_minus]), R*np.cos(TH)
-        x_label = r"$x$ [$R_g$]"
-    elif cut == "yz":
-        phi_cut_plus = np.where(phi_vtk >= np.pi/2)[0][0]
-        phi_cut_minus = np.where(phi_vtk >= 3*np.pi/2)[0][0]
-        X_cut_plus, X_cut_minus, Z = R*np.sin(TH)*np.sin(phi_vtk[phi_cut_plus]), R*np.sin(TH)*np.sin(phi_vtk[phi_cut_minus]), R*np.cos(TH)
-        x_label = r"$y$ [$R_g$]"
+    phi_cut_plus = np.where(phi_vtk >= 0)[0][0]
+    X_cut_plus, Z = R*np.sin(TH)*np.cos(phi_vtk[phi_cut_plus]), R*np.cos(TH)
+    x_label = r"$x$ [$R_g$]"
     y_label = r"$z$ [$R_g$]"
-    x_plus = X_cut_plus.flatten()
-    x_minus = X_cut_minus.flatten()
-    # ------------------------------------------------------------------------------------------------------------------------------------
-    fig, axs = plt.subplots(1, 3, gridspec_kw={'wspace': 0.01}, figsize=(15, 6.5))
+
+    fig, axs = plt.subplots(1, 3, gridspec_kw={'wspace': 0.01}, figsize=(15, 12))
 
     ax = axs[0]
     ax.set_title(title_r)
     buff = np.max(np.abs(q_r))
     ticks = np.linspace(-buff, buff, 5)
     pc0 = ax.pcolormesh(X_cut_plus, Z, q_r[phi_cut_plus,:,:], cmap="berlin", vmin=-buff, vmax=buff)
-    pc0 = ax.pcolormesh(X_cut_minus, Z, q_r[phi_cut_minus,:,:], cmap="berlin", vmin=-buff, vmax=buff)
     cbar = fig.colorbar(pc0, ax=ax, location="bottom", pad=pad, shrink=shrink, format=formats, ticks=ticks)
-    if cut == "xz" and (beta_0 != 0):
-        wh = (x_plus > 1/np.sqrt(1 + 1/np.sin(-beta_0)**2)) & (x_plus < r_max/np.sqrt(1 + 1/np.sin(-beta_0)**2))
-        ax.plot(x_plus[wh], x_plus[wh]/np.sin(-beta_0), color="white")
-        wh = (x_minus < -1/np.sqrt(1 + 1/np.sin(-beta_0)**2)) & (x_minus > -r_max/np.sqrt(1 + 1/np.sin(-beta_0)**2))
-        ax.plot(x_minus[wh], x_minus[wh]/np.sin(-beta_0), color="white")
-    else:
-        ax.vlines(0, -r_max, -r_min, color="white")
-        ax.vlines(0, r_min, r_max, color="white")
     ax.tick_params(axis='both', direction='in', color='white', width=w, length=l, pad=lpad)
-    ax.set_facecolor("black")
+    ax.set_facecolor("dimgray")
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
     if zoom == True:
-        ax.set_xlim((-3*r_min,3*r_min))
-        xplot = np.linspace(-5*r_min, 5*r_min, 5)
+        ax.set_xlim((0,5*r_min))
+        xplot = np.linspace(0, 5*r_min, 5)
         xl = [f"{i:.1f}" for i in xplot]
         xl[0] = ""
         xl[-1] = ""
         ax.set_xticks(xplot,xl)
         ax.set_ylim((-5*r_min, 5*r_min))
-        ax.set_yticks(xplot)
+        yplot = np.linspace(-5*r_min, 5*r_min, 5)
+        ax.set_yticks(yplot)
     elif zoom == False:
-        ax.set_xlim((-r_max,r_max))
-        xplot = np.linspace(-r_max, r_max, 5)
+        ax.set_xlim((0,r_max))
+        xplot = np.linspace(0, r_max, 5)
         xl = [f"{i:.0f}" for i in xplot]
         xl[0] = ""
         xl[-1] = ""
         ax.set_xticks(xplot,xl)
         ax.set_ylim((-r_max, r_max))
-        ax.set_yticks(xplot)
+        yplot = np.linspace(-r_max, r_max, 5)
+        ax.set_yticks(yplot)
     ax.yaxis.set_ticks_position('both')
     ax.xaxis.set_ticks_position('both')
     for spine in ax.spines.values():
@@ -319,39 +317,32 @@ def VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, cut, zoom
     buff = np.max(np.abs(q_th))
     ticks = np.linspace(-buff, buff, 5)
     pc0 = ax.pcolormesh(X_cut_plus, Z, q_th[phi_cut_plus,:,:], cmap="berlin", vmin=-buff, vmax=buff)
-    pc0 = ax.pcolormesh(X_cut_minus, Z, q_th[phi_cut_minus,:,:], cmap="berlin", vmin=-buff, vmax=buff)
     cbar = fig.colorbar(pc0, ax=ax, location="bottom", pad=pad, shrink=shrink, format=formats, ticks=ticks)
-    if cut == "xz" and (beta_0 != 0):
-        wh = (x_plus > 1/np.sqrt(1 + 1/np.sin(-beta_0)**2)) & (x_plus < r_max/np.sqrt(1 + 1/np.sin(-beta_0)**2))
-        ax.plot(x_plus[wh], x_plus[wh]/np.sin(-beta_0), color="white")
-        wh = (x_minus < -1/np.sqrt(1 + 1/np.sin(-beta_0)**2)) & (x_minus > -r_max/np.sqrt(1 + 1/np.sin(-beta_0)**2))
-        ax.plot(x_minus[wh], x_minus[wh]/np.sin(-beta_0), color="white")
-    else:
-        ax.vlines(0, -r_max, -r_min, color="white")
-        ax.vlines(0, r_min, r_max, color="white")
     ax.tick_params(axis='both', direction='in', color='white', width=w, length=l, pad=lpad)
-    ax.set_facecolor("black")
+    ax.set_facecolor("dimgray")
     ax.set_xlabel(x_label)
     if zoom == True:
-        ax.set_xlim((-3*r_min,3*r_min))
-        xplot = np.linspace(-5*r_min, 5*r_min, 5)
+        ax.set_xlim((0,5*r_min))
+        xplot = np.linspace(0, 5*r_min, 5)
         xl = [f"{i:.1f}" for i in xplot]
         xl[0] = ""
         xl[-1] = ""
         ax.set_xticks(xplot,xl)
         ax.set_ylim((-5*r_min, 5*r_min))
-        yl = ["" for i in xplot]
-        ax.set_yticks(xplot, yl)
+        yplot = np.linspace(-5*r_min, 5*r_min,5)
+        yl = ["" for i in yplot]
+        ax.set_yticks(yplot, yl)
     elif zoom == False:
-        ax.set_xlim((-r_max,r_max))
-        xplot = np.linspace(-r_max, r_max, 5)
+        ax.set_xlim((0,r_max))
+        xplot = np.linspace(0, r_max, 5)
         xl = [f"{i:.0f}" for i in xplot]
         xl[0] = ""
         xl[-1] = ""
         ax.set_xticks(xplot,xl)
         ax.set_ylim((-r_max, r_max))
-        yl = ["" for i in xplot]
-        ax.set_yticks(xplot, yl)
+        yplot = np.linspace(-r_max, r_max, 5)
+        yl = ["" for i in yplot]
+        ax.set_yticks(yplot, yl)
     ax.yaxis.set_ticks_position('both')
     ax.xaxis.set_ticks_position('both')
     for spine in ax.spines.values():
@@ -362,38 +353,33 @@ def VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, cut, zoom
     buff = np.max(np.abs(q_phi))
     ticks = np.linspace(-buff, buff, 5)
     pc0 = ax.pcolormesh(X_cut_plus, Z, q_phi[phi_cut_plus,:,:], cmap="berlin", vmin=-buff, vmax=buff)
-    pc0 = ax.pcolormesh(X_cut_minus, Z, q_phi[phi_cut_minus,:,:], cmap="berlin", vmin=-buff, vmax=buff)
     cbar = fig.colorbar(pc0, ax=ax, location="bottom", pad=pad, shrink=shrink, format=formats, ticks=ticks)
-    if cut == "xz" and (beta_0 != 0):
-        wh = (x_plus > 1/np.sqrt(1 + 1/np.sin(-beta_0)**2)) & (x_plus < r_max/np.sqrt(1 + 1/np.sin(-beta_0)**2))
-        ax.plot(x_plus[wh], x_plus[wh]/np.sin(-beta_0), color="white")
-        wh = (x_minus < -1/np.sqrt(1 + 1/np.sin(-beta_0)**2)) & (x_minus > -r_max/np.sqrt(1 + 1/np.sin(-beta_0)**2))
-        ax.plot(x_minus[wh], x_minus[wh]/np.sin(-beta_0), color="white")
-    else:
-        ax.vlines(0, -r_max, -r_min, color="white")
-        ax.vlines(0, r_min, r_max, color="white")
     ax.tick_params(axis='both', direction='in', color='white', width=w, length=l, pad=lpad)
-    ax.set_facecolor("black")
+    ax.set_facecolor("dimgray")
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
     if zoom == True:
-        ax.set_xlim((-5*r_min,5*r_min))
-        xplot = np.linspace(-5*r_min, 5*r_min, 5)
+        ax.set_xlim((0,5*r_min))
+        xplot = np.linspace(0, 5*r_min, 5)
         xl = [f"{i:.1f}" for i in xplot]
         xl[0] = ""
         xl[-1] = ""
         ax.set_xticks(xplot,xl)
         ax.set_ylim((-5*r_min, 5*r_min))
-        ax.set_yticks(xplot)
+        yplot = np.linspace(-5*r_min, 5*r_min,5)
+        yl = ["" for i in yplot]
+        ax.set_yticks(yplot, yl)
     elif zoom == False:
-        ax.set_xlim((-r_max,r_max))
-        xplot = np.linspace(-r_max, r_max, 5)
+        ax.set_xlim((0,r_max))
+        xplot = np.linspace(0, r_max, 5)
         xl = [f"{i:.0f}" for i in xplot]
         xl[0] = ""
         xl[-1] = ""
         ax.set_xticks(xplot,xl)
         ax.set_ylim((-r_max, r_max))
-        ax.set_yticks(xplot)
+        yplot = np.linspace(-r_max, r_max, 5)
+        yl = ["" for i in yplot]
+        ax.set_yticks(yplot, yl)
     ax.yaxis.set_label_position("right")
     ax.yaxis.tick_right()
     ax.yaxis.set_ticks_position('both')
@@ -401,41 +387,33 @@ def VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, cut, zoom
     for spine in ax.spines.values():
         spine.set_linewidth(w)
 
-    fig.suptitle(r"$t/t_\text{orbit} =$ " + f"{time:.0f}")
+    fig.suptitle(r"$t\omega_\mathrm{orbit} =$ " + f"{time:.0f}", x=0.5, y=0.915)
     fig.tight_layout()
     plt.savefig(f"./output/plots/{plots_name}.png", bbox_inches='tight', dpi=300)
     plt.close()
     list_plots.append(f"./output/plots/{plots_name}.png")
 
-# def THEORETICAL_ROTATION_CURVE(r_vtk, Tilt_init, spin, gravity, source_term):
-#     tilt = Tilt_init * np.pi / 180
+def THEORETICAL_ROTATION_CURVE(R, Tilt_init, spin, gravity, v_r, dr_v_r, r_vtk):
+    tilt = Tilt_init * np.pi / 180
 
-#     if source_term == False:
-#         if gravity == "Kepler":
-#             POTENTIAL = 1/r_vtk**2
-#         elif gravity == "PW":
-#             POTENTIAL = 1/(r_vtk - 2)**2
-#         elif gravity == "Einstein":
-#             POTENTIAL = 1/r_vtk**2 + 6/r_vtk**3
-#         omega_th = np.sqrt(POTENTIAL / r_vtk)
-#     else:
-#         a = r_vtk
-#         b = 2 * np.cos(tilt) * spin / r_vtk**2
-#         if gravity == "Kepler":
-#             c = - 1/r_vtk**2
-#         elif gravity == "PW":
-#             c = - 1/(r_vtk - 2)**2
-#         elif gravity == "Einstein":
-#             c = - 1/r_vtk**2 - 6/r_vtk**3
-#         delta = b**2 - 4*a*c
-#         omega_th = (-b + np.sqrt(delta)) / (2*a)
-        
-#     kappa_2_th = 4*omega_th**2 + 2*r_vtk*omega_th*np.gradient(omega_th, r_vtk)
+    a = R
+    b = 2 * np.cos(tilt) * spin / R**2
+    if gravity == "Kepler":
+        c = - 1/R**2
+    elif gravity == "PW":
+        c = - 1/(R - 2)**2
+    elif gravity == "Einstein":
+        c = - 1/R**2 - 6/R**3
+    c -= v_r * dr_v_r
 
-#     if r_vtk[np.where(kappa_2_th < 0)].size == 0:
-#         return omega_th, kappa_2_th, 0
-#     else:
-#         return omega_th, kappa_2_th, r_vtk[np.where(kappa_2_th < 0)[0][-1]]
+    delta = b**2 - 4*a*c
+    omega_th_p = (-b + np.sqrt(delta)) / (2*a)
+    omega_th_m = (-b - np.sqrt(delta)) / (2*a)
+    
+    kappa_2_th_p = 4*omega_th_p**2 + 2*R*omega_th_p*np.gradient(omega_th_p, r_vtk)
+    kappa_2_th_m = 4*omega_th_m**2 + 2*R*omega_th_m*np.gradient(omega_th_m, r_vtk)
+
+    return omega_th_p, omega_th_m, kappa_2_th_p, kappa_2_th_m
 
 def KEPLER(r_vtk):
     return np.sqrt(1/r_vtk**3)

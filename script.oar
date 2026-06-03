@@ -1,13 +1,26 @@
+#!/bin/bash
+
 #OAR --name ???
-#OAR -l /nodes=1/gpu=1,walltime=02:00:00
 #OAR --project mhdiscs
+#OAR -l /nodes=1/gpu=1,walltime=06:00:00
+#OAR -t amd
 #OAR --notify mail:geoffrey.marty@univ-grenoble-alpes.fr
-#OAR --stdout run.out
-#OAR --stderr run.err
 
 cd $OAR_WORKDIR
-module load cuda/12.9.41.patched
 
-./idefix
+# load nix environement
+. /applis/site/nix.sh
 
-mv *.*.log output/logs/
+#########################################
+## Code options
+#########################################
+command="./idefix"
+option=""
+
+# Execution
+echo "executing $command $option"
+
+#########################################
+## Launch code
+#########################################
+$command $option
