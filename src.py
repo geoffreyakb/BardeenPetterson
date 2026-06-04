@@ -26,7 +26,7 @@ def READ_BOX_AVERAGE():
 
     return V["t"], V["Mtot"]
 
-def READ_RADIAL_AVERAGE(n_average, n_r, spin, beta_0):
+def READ_RADIAL_AVERAGE(n_average, n_r, beta_0):
     Sigma = np.zeros((n_average, n_r))
     rho = np.zeros((n_average, n_r))
     L = np.zeros((n_average, n_r, 3))
@@ -232,7 +232,7 @@ def MASS_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, zoom, list_pl
     for spine in ax.spines.values():
         spine.set_linewidth(w)
 
-    fig.suptitle(r"$t\omega_\mathrm{orbit} =$ " + f"{time:.0f}")
+    fig.suptitle(r"$t\Omega_0(r=1) =$ " + f"{time:.0f}")
     fig.tight_layout()
     plt.savefig(f"./output/plots/{plots_name}.png", bbox_inches='tight', dpi=300)
     plt.close()
@@ -397,7 +397,7 @@ def VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, cut, zoom
     for spine in ax.spines.values():
         spine.set_linewidth(w)
 
-    fig.suptitle(r"$t\omega_\mathrm{orbit} =$ " + f"{time:.0f}")
+    fig.suptitle(r"$t\Omega_0(r=1) =$ " + f"{time:.0f}")
     fig.tight_layout()
     plt.savefig(f"./output/plots/{plots_name}.png", bbox_inches='tight', dpi=300)
     plt.close()
