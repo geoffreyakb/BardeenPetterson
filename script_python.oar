@@ -1,13 +1,15 @@
-#OAR --name postproc
-#OAR -l /nodes=1/core=1,walltime=00:30:00
+#!/bin/bash
+
+#OAR --name pp???
+#OAR -l /nodes=1/core=1,walltime=04:00:00
 #OAR --project mhdiscs
 #OAR --notify mail:geoffrey.marty@univ-grenoble-alpes.fr
-#OAR --stdout postproc.out
-#OAR --stderr postproc.err
 
 cd $OAR_WORKDIR
 export IDEFIX_DIR=~/src/idefix
-source ~/src/postproc-venv/bin/activate
+export TEXMFROOT="/home/martyge/.guix-profile/share"
+export TEXMFDIST="/home/martyge/.guix-profile/share/texmf-dist"
+export TEXFORMATS="/home/martyge/.cache/texlive2026/texmf-var/web2c//"
 source /applis/site/guix-start.sh
 
 python3 ./postproc.py

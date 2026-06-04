@@ -171,24 +171,27 @@ void Setup::InitFlow(DataBlock &data) {
                 th = d.x[JDIR](j);
 
                 real R = r*sin(th);
+                real z = r*cos(th);
                 real Vk = 1.0/sqrt(R);
                 real cs = epsilon/sqrt(R);
 
-                real rho = 1.0/(R * sqrt(R)) * exp(1.0/pow(cs,2) * (1/r - 1/R));
-                if (rho >= densityFloorGlob) {
-                    d.Vc(RHO,k,j,i) = rho;
-                }
-                else {
-                    d.Vc(RHO,k,j,i) = densityFloorGlob;
-                }
+                d.Vc(RHO,k,j,i) = 1.0/(R * sqrt(R)) * exp(1.0/pow(cs,2) * (1/r - 1/R));
                 d.Vc(VX1,k,j,i) = ZERO_F;
                 d.Vc(VX2,k,j,i) = ZERO_F;
-                if (sin(th) >= 2.5*pow(epsilon, 2)) {
-                    d.Vc(VX3,k,j,i) = Vk * sqrt(sin(th) - 2.5*pow(epsilon, 2));
+
+                real grad_Phi;
+                switch (gravityGlob) {
+                    case GravityPotential::Kepler:
+                        grad_Phi = 1/pow(r,2);
+                    break;
+                    case GravityPotential::Einstein:
+                        grad_Phi = 1/pow(r,2) + 6/pow(r,3);
+                    break;
+                    case GravityPotential::PW:
+                        grad_Phi = 1 / pow(r-2, 2);
+                    break;
                 }
-                else {
-                    d.Vc(VX3,k,j,i) = ZERO_F;
-                }
+                d.Vc(VX3,k,j,i) = sqrt(r * pow(sin(th), 2) * grad_Phi);
             }
         }
     }

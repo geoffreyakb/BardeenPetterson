@@ -21,12 +21,13 @@ Analysis::Analysis(Input &input, Grid &grid, DataBlock &data) : grid(grid), gh(g
     this->column_width = 2*precision;
     this->pathAnalysisFolder = "output/analysis/";
     // Radial averages (to update according to the number of radial profiles you want)
-    this->radial_NVARS = 5;
+    this->radial_NVARS = 6;
     this->Sigma = 0;
     this->Lx = 1;
     this->Ly = 2;
     this->Lz = 3;
     this->rho_Vr = 4;
+    this->rho_Vperp = 5;
     this->radialAverage = IdefixHostArray2D<real> ("radialAverage", radial_NVARS, grid.np_int[IDIR]);
     // Global averages (to update according to the number of global diagnosis you want)
     this->global_NVARS = 1;
@@ -65,10 +66,11 @@ void Analysis::ComputeRadialAverage(IdefixHostArray4D<real> Vin) {
                 // Filling the local radial averages arrays
                 int glob_i = i + d.gbeg[IDIR] - 2*grid.nghost[IDIR];    // -nghost for the global ghosts -nghost for the local ones (i does not start at the "local 0")
                 loc_radialAverage(Sigma, glob_i)    += Vin(RHO,k,j,i) * r * sin(th) * dth * dphi / (2*M_PI);      // Should be the same definition as Kimmig and Dullemond (2024)
-                loc_radialAverage(Lx, glob_i)       += Lr*er_ex + Lth*eth_ex + Lphi*ephi_ex;
-                loc_radialAverage(Ly, glob_i)       += Lr*er_ey + Lth*eth_ey + Lphi*ephi_ey;
-                loc_radialAverage(Lz, glob_i)       += Lr*er_ez + Lth*eth_ez + Lphi*ephi_ez;
-                loc_radialAverage(rho_Vr, glob_i)   += Vin(RHO,k,j,i) * Vin(VX1,k,j,i) * sin(th) * dth * dphi / (4*M_PI);
+                loc_radialAverage(Lx, glob_i)           += Lr*er_ex + Lth*eth_ex + Lphi*ephi_ex;
+                loc_radialAverage(Ly, glob_i)           += Lr*er_ey + Lth*eth_ey + Lphi*ephi_ey;
+                loc_radialAverage(Lz, glob_i)           += Lr*er_ez + Lth*eth_ez + Lphi*ephi_ez;
+                loc_radialAverage(rho_Vr, glob_i)       += Vin(RHO,k,j,i) * Vin(VX1,k,j,i) * sin(th) * dth * dphi / (4*M_PI);
+                loc_radialAverage(rho_Vperp, glob_i)    += Vin(RHO,k,j,i) * sqrt( pow(Vin(VX2,k,j,i),2) + pow(Vin(VX3,k,j,i),2) ) * sin(th) * dth * dphi / (4*M_PI);
             }
         }
     }
@@ -136,6 +138,7 @@ void Analysis::WriteRadialAverage() {
         fileRadialAverage << std::setw(column_width) << "Ly";
         fileRadialAverage << std::setw(column_width) << "Lz";
         fileRadialAverage << std::setw(column_width) << "rho_Vr";
+        fileRadialAverage << std::setw(column_width) << "rho_Vperp";
         fileRadialAverage << std::endl;
 
         for (int i = 0 ; i < grid.np_int[IDIR] ; i++) {

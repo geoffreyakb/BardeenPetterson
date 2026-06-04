@@ -46,6 +46,7 @@ class Analysis {
         int Ly;
         int Lz;
         int rho_Vr;
+        int rho_Vperp;
         IdefixHostArray2D<real> radialAverage;
         int global_NVARS;
         int Mtot;
