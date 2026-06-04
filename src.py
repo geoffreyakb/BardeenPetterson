@@ -132,8 +132,8 @@ def MOVIE(plots, name):
 def MASS_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, zoom, list_plots, plots_name, time):
     densityFloor = quantities["densityFloor"]
     rho = quantities["rho"]
-    # E_K = quantities["E_K"]
-    # L2 = quantities["L2"]
+    v_r = quantities["v_r"]
+    v_theta = quantities["v_theta"]
 
     R, TH = np.meshgrid(r_vtk, theta_vtk)
     phi_cut_plus = np.where(phi_vtk >= 0)[0][0]
@@ -154,14 +154,14 @@ def MASS_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, zoom, list_pl
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
     if zoom == True:
-        ax.set_xlim((0,5*r_min))
-        xplot = np.linspace(0, 5*r_min, 5)
+        ax.set_xlim((0,4*r_min))
+        xplot = np.linspace(0, 4*r_min, 5)
         xl = [f"{i:.1f}" for i in xplot]
         xl[0] = ""
         xl[-1] = ""
         ax.set_xticks(xplot,xl)
-        ax.set_ylim((-5*r_min, 5*r_min))
-        yplot = np.linspace(-5*r_min, 5*r_min, 5)
+        ax.set_ylim((-4*r_min, 4*r_min))
+        yplot = np.linspace(-4*r_min, 4*r_min, 5)
         ax.set_yticks(yplot)
     elif zoom == False:
         ax.set_xlim((0,r_max))
@@ -189,14 +189,14 @@ def MASS_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, zoom, list_pl
     # ax.set_facecolor("dimgray")
     # ax.set_xlabel(x_label)
     # if zoom == True:
-    #     ax.set_xlim((0,5*r_min))
-    #     xplot = np.linspace(0, 5*r_min, 5)
+    #     ax.set_xlim((0,4*r_min))
+    #     xplot = np.linspace(0, 4*r_min, 5)
     #     xl = [f"{i:.1f}" for i in xplot]
     #     xl[0] = ""
     #     xl[-1] = ""
     #     ax.set_xticks(xplot,xl)
-    #     ax.set_ylim((-5*r_min, 5*r_min))
-    #     yplot = np.linspace(-5*r_min, 5*r_min,5)
+    #     ax.set_ylim((-4*r_min, 4*r_min))
+    #     yplot = np.linspace(-4*r_min, 4*r_min,5)
     #     yl = ["" for i in yplot]
     #     ax.set_yticks(yplot, yl)
     # elif zoom == False:
@@ -227,14 +227,14 @@ def MASS_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, zoom, list_pl
     # ax.set_xlabel(x_label)
     # ax.set_ylabel(y_label)
     # if zoom == True:
-    #     ax.set_xlim((0,3*r_min))
-    #     xplot = np.linspace(0, 5*r_min, 5)
+    #     ax.set_xlim((0,4*r_min))
+    #     xplot = np.linspace(0, 4*r_min, 5)
     #     xl = [f"{i:.1f}" for i in xplot]
     #     xl[0] = ""
     #     xl[-1] = ""
     #     ax.set_xticks(xplot,xl)
-    #     ax.set_ylim((-5*r_min, 5*r_min))
-    #     yplot = np.linspace(-5*r_min, 5*r_min,5)
+    #     ax.set_ylim((-4*r_min, 4*r_min))
+    #     yplot = np.linspace(-4*r_min, 4*r_min,5)
     #     yl = ["" for i in yplot]
     #     ax.set_yticks(yplot, yl)
     # elif zoom == False:
@@ -288,14 +288,14 @@ def VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, zoom, lis
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
     if zoom == True:
-        ax.set_xlim((0,5*r_min))
-        xplot = np.linspace(0, 5*r_min, 5)
+        ax.set_xlim((0,4*r_min))
+        xplot = np.linspace(0, 4*r_min, 5)
         xl = [f"{i:.1f}" for i in xplot]
         xl[0] = ""
         xl[-1] = ""
         ax.set_xticks(xplot,xl)
-        ax.set_ylim((-5*r_min, 5*r_min))
-        yplot = np.linspace(-5*r_min, 5*r_min, 5)
+        ax.set_ylim((-4*r_min, 4*r_min))
+        yplot = np.linspace(-4*r_min, 4*r_min, 5)
         ax.set_yticks(yplot)
     elif zoom == False:
         ax.set_xlim((0,r_max))
@@ -322,14 +322,14 @@ def VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, zoom, lis
     ax.set_facecolor("dimgray")
     ax.set_xlabel(x_label)
     if zoom == True:
-        ax.set_xlim((0,5*r_min))
-        xplot = np.linspace(0, 5*r_min, 5)
+        ax.set_xlim((0,4*r_min))
+        xplot = np.linspace(0, 4*r_min, 5)
         xl = [f"{i:.1f}" for i in xplot]
         xl[0] = ""
         xl[-1] = ""
         ax.set_xticks(xplot,xl)
-        ax.set_ylim((-5*r_min, 5*r_min))
-        yplot = np.linspace(-5*r_min, 5*r_min,5)
+        ax.set_ylim((-4*r_min, 4*r_min))
+        yplot = np.linspace(-4*r_min, 4*r_min,5)
         yl = ["" for i in yplot]
         ax.set_yticks(yplot, yl)
     elif zoom == False:
@@ -359,14 +359,14 @@ def VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, zoom, lis
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
     if zoom == True:
-        ax.set_xlim((0,5*r_min))
-        xplot = np.linspace(0, 5*r_min, 5)
+        ax.set_xlim((0,4*r_min))
+        xplot = np.linspace(0, 4*r_min, 5)
         xl = [f"{i:.1f}" for i in xplot]
         xl[0] = ""
         xl[-1] = ""
         ax.set_xticks(xplot,xl)
-        ax.set_ylim((-5*r_min, 5*r_min))
-        yplot = np.linspace(-5*r_min, 5*r_min,5)
+        ax.set_ylim((-4*r_min, 4*r_min))
+        yplot = np.linspace(-4*r_min, 4*r_min,5)
         yl = ["" for i in yplot]
         ax.set_yticks(yplot, yl)
     elif zoom == False:

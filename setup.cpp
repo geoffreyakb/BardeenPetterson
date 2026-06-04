@@ -177,23 +177,20 @@ void Setup::InitFlow(DataBlock &data) {
                 d.Vc(RHO,k,j,i) = 1.0/(R * sqrt(R)) * exp(1.0/pow(cs,2) * (1/r - 1/R));
                 d.Vc(VX1,k,j,i) = ZERO_F;
                 d.Vc(VX2,k,j,i) = ZERO_F;
-                
-                real a = 1/r;
-                real b = 2*sin(th)*spin/pow(r,3);
-                real c;
+
+                real grad_Phi;
                 switch (gravityGlob) {
                     case GravityPotential::Kepler:
-                        c = - 1/pow(r,2);
+                        grad_Phi = 1/pow(r,2);
                     break;
                     case GravityPotential::Einstein:
-                        c = - 1/pow(r,2) - 6/pow(r,3);
+                        grad_Phi = 1/pow(r,2) + 6/pow(r,3);
                     break;
                     case GravityPotential::PW:
-                        c = - 1 / pow(r-2, 2);
+                        grad_Phi = 1 / pow(r-2, 2);
                     break;
                 }
-                real delta = pow(b,2) - 4*a*c;
-                d.Vc(VX3,k,j,i) = (-b + sqrt(delta)) / (2*a);
+                d.Vc(VX3,k,j,i) = sqrt(r * pow(sin(th), 2) * grad_Phi);
             }
         }
     }

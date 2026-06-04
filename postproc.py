@@ -440,6 +440,48 @@ plt.savefig(f"./plots/angles.png", bbox_inches='tight', dpi=500)
 plt.close()
 
 # ----------------------------------------------------------------------------------
+# First vtk velocity
+# ----------------------------------------------------------------------------------
+r_vtk, theta_vtk, phi_vtk, rho, v_r, v_theta, v_phi = READ_VTK(0)
+R, TH = np.meshgrid(r_vtk, theta_vtk)
+phi_cut_plus = np.where(phi_vtk >= 0)[0][0]
+X_cut_plus, Z = R*np.sin(TH)*np.cos(phi_vtk[phi_cut_plus]), R*np.cos(TH)
+x_label = r"$x$ [$R_g$]"
+y_label = r"$z$ [$R_g$]"
+
+fig, axs = plt.subplots(1, figsize=(5, 12))
+
+ax = axs
+ax.set_title(r'$v_\varphi$ $[$Code Units$]$')
+buff = np.max(np.abs(v_phi))
+levels = np.linspace(0, buff, 10)
+pc0 = ax.contourf(X_cut_plus, Z, v_phi[phi_cut_plus,:,:], cmap="berlin", levels=levels)
+formats = tkr.FormatStrFormatter('%.2f')
+cbar = fig.colorbar(pc0, ax=ax, location="bottom", pad=pad/2, shrink=shrink, format=formats, ticks=levels)
+ax.tick_params(axis='both', direction='in', color='white', width=w, length=l, pad=lpad)
+ax.set_facecolor("dimgray")
+ax.set_xlabel(x_label)
+ax.set_ylabel(y_label)
+ax.set_xlim((0,r_max))
+xplot = np.linspace(0, r_max, 5)
+xl = [f"{i:.0f}" for i in xplot]
+xl[0] = ""
+xl[-1] = ""
+ax.set_xticks(xplot,xl)
+ax.set_ylim((-r_max, r_max))
+yplot = np.linspace(-r_max, r_max, 5)
+ax.set_yticks(yplot)
+ax.yaxis.set_ticks_position('both')
+ax.xaxis.set_ticks_position('both')
+for spine in ax.spines.values():
+    spine.set_linewidth(w)
+
+fig.suptitle(r"$t\omega_\mathrm{orbit} = 0$ ", x=0.5, y=0.98)
+fig.tight_layout()
+plt.savefig(f"./plots/Vphi_0_{gravity}.png", bbox_inches='tight', dpi=300)
+plt.close()
+
+# ----------------------------------------------------------------------------------
 # angles movie
 # ----------------------------------------------------------------------------------
 # angles_plots = []
@@ -555,8 +597,7 @@ for n in range(n_vtk):
     PHI, TH, R = np.meshgrid(phi_vtk, theta_vtk, r_vtk, indexing="ij")
 
     c_s = epsilon / np.sqrt(R)
-    E_K = rho * (v_r**2 + v_theta**2 + v_phi**2)
-    L2 = rho**2 * r_vtk**2 * (v_theta**2 + v_phi**2)
+    mask = (rho > densityFloor * 2)
 
     # mass plots ----------------------------------------------------------------------------------------------------------------------------------------
     # fig, axs = plt.subplots(1, 2, figsize=(10, 5))
@@ -614,19 +655,19 @@ for n in range(n_vtk):
     quantities = {
         "densityFloor": densityFloor,
         "rho": rho,
-        "E_K": E_K/c_s**2,
-        "L2": L2/c_s**2
+        "v_r": v_r,
+        "v_theta": v_theta,
     }
     MASS_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, False, mass_plots, f"mass_{n}", t[n_analysis])
     MASS_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, True, mass_zoom_plots, f"mass_zoom_{n}", t[n_analysis])
 
     quantities = {
-        "q_r": v_r/c_s,
-        "q_th": v_theta/c_s,
-        "q_phi": v_phi/c_s,
-        "title_r": r"$v_r/c_s$ $[-]$",
-        "title_th": r"$v_\theta/c_s$ $[-]$",
-        "title_phi": r"$v_\varphi/c_s$ $[-]$"
+        "q_r": v_r*mask,
+        "q_th": v_theta*mask,
+        "q_phi": v_phi*mask,
+        "title_r": r"$v_r$ $[$Code Units$]$",
+        "title_th": r"$v_\theta$ $[$Code Units$]$",
+        "title_phi": r"$v_\varphi$ $[$Code Units$]$"
     }
     VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, False, velocity_plots, f"velocity_{n}", t[n_analysis])
     VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, True, velocity_zoom_plots, f"velocity_zoom_{n}", t[n_analysis])
@@ -645,12 +686,12 @@ for n in range(n_vtk):
     Vcrossh_phi = v_r*hth - v_theta*hr
 
     quantities = {
-        "q_r": Vcrossh_r/(omega_orbit * c_s),
-        "q_th": Vcrossh_th/(omega_orbit * c_s),
-        "q_phi": Vcrossh_phi/(omega_orbit * c_s),
-        "title_r": r'$(v\times h)_r/(\omega_\mathrm{orbit}c_s)$ $[-]$',
-        "title_th": r'$(v\times h)_\theta/(\omega_\mathrm{orbit}c_s)$ $[-]$',
-        "title_phi": r'$(v\times h)_\varphi/(\omega_\mathrm{orbit}c_s)$ $[-]$'
+        "q_r": Vcrossh_r*mask,
+        "q_th": Vcrossh_th*mask,
+        "q_phi": Vcrossh_phi*mask,
+        "title_r": r'$(v\times h)_r$ $[$Code Units$]$',
+        "title_th": r'$(v\times h)_\theta$ $[$Code Units$]$',
+        "title_phi": r'$(v\times h)_\varphi$ $[$Code Units$]$'
     }
     VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, True, source_term_plots, f"source_term_{n}", t[n_analysis])
 MOVIE(mass_plots, "mass")
