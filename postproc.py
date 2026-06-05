@@ -35,7 +35,7 @@ r, Sigma, rho_mean, L, beta, gamma, LBH, betaBH, gammaBH, rho_Vr, rho_Vperp = RE
 # Normalizations and useful quantities
 # ----------------------------------------------------------------------------------
 # Time
-r_norm = 25         # cf. NP2000
+r_norm = 5         # cf. NP2000
 grad_Phi = 0
 if gravity == "Kepler":
     grad_Phi = 1/r_norm**2
@@ -97,7 +97,7 @@ formats = tkr.FormatStrFormatter('%.0f')
 cbar = fig.colorbar(pc0, ax=ax, location="bottom", pad=pad, shrink=shrink, format=formats, ticks=ticks)
 ax.tick_params(axis='both', direction='in', color='white', width=w, length=l, pad=lpad)
 ax.set_facecolor("black")
-ax.set_xlabel(r"$t\Omega_0(r=1)$ $[-]$")
+ax.set_xlabel(rf"$t\Omega_0(r={r_norm}R_g)$ $[-]$")
 ax.set_ylabel(r"$r$ $[R_g]$", labelpad=lpad)
 ax.set_xlim((0, n_orbit))
 xplot = np.linspace(0, n_orbit, 5)
@@ -116,16 +116,19 @@ for spine in ax.spines.values():
 
 ax = axs[1]
 ax.set_title(r"$\gamma$ $[$°$]$")
-buff = np.max(np.abs(gammaBH))
+buff = 180
 ticks = np.linspace(-buff, buff, 5)
 pc0 = ax.pcolormesh(T, R, gammaBH, cmap="berlin", vmin=-buff, vmax=buff)
 formats = tkr.FormatStrFormatter('%.0f')
 cbar = fig.colorbar(pc0, ax=ax, location="bottom", pad=pad, shrink=shrink, format=formats, ticks=ticks)
 ax.tick_params(axis='both', direction='in', color='white', width=w, length=l, pad=lpad)
 ax.set_facecolor("black")
-ax.set_xlabel(r"$t\Omega_0(r=1)$ $[-]$")
+ax.set_xlabel(rf"$t\Omega_0(r={r_norm}R_g)$ $[-]$")
 ax.set_ylabel(r"$r$ $[R_g]$", labelpad=lpad)
 ax.set_xlim((0, n_orbit))
+ax.set_ylim((-180,180))
+yplot = np.linspace(-180, 180, 5)
+ax.set_yticks(yplot)
 xplot = np.linspace(0, n_orbit, 5)
 xl = [f"{i:.0f}" for i in xplot]
 xl[0] = ""
@@ -164,7 +167,7 @@ ax.plot(r, betaBH[n1,:], color="red")
 ax.plot(r, betaBH[n2,:], color="blue")
 ax.plot(r, betaBH[n3,:], color="green")
 ax.plot(r, betaBH[n4,:], color="black", linestyle="dashed")
-ax.set_xlim((r_min-1, r_max))
+ax.set_xlim((r_min, r_max))
 xplot = np.linspace(r_min, r_max, 5)
 xl = [f"{i:.0f}" for i in xplot]
 ax.set_xticks(xplot, xl)
@@ -178,12 +181,15 @@ for spine in ax.spines.values():
 ax.grid()
 
 ax = axs[1]
-ax.plot(r, gammaBH[n0,:], color="black", linestyle="dotted", label=rf"$t\Omega_0(r = 1) =$ {t[n0]:.1f}")
-ax.plot(r, gammaBH[n1,:], color="red", label=rf"$t\Omega_0(r = 1) =$ {t[n1]:.1f}")
-ax.plot(r, gammaBH[n2,:], color="blue", label=rf"$t\Omega_0(r = 1) =$ {t[n2]:.1f}")
-ax.plot(r, gammaBH[n3,:], color="green", label=rf"$t\Omega_0(r = 1) =$ {t[n3]:.1f}")
-ax.plot(r, gammaBH[n4,:], color="black", linestyle="dashed", label=rf"$t\Omega_0(r = 1) =$ {t[n4]:.1f}")
-ax.set_xlim((r_min-1, r_max))
+ax.plot(r, gammaBH[n0,:], color="black", linestyle="dotted", label=rf"$t\Omega_0(r = {r_norm}R_g) =$ {t[n0]:.1f}")
+ax.plot(r, gammaBH[n1,:], color="red", label=rf"$t\Omega_0(r = {r_norm}R_g) =$ {t[n1]:.1f}")
+ax.plot(r, gammaBH[n2,:], color="blue", label=rf"$t\Omega_0(r = {r_norm}R_g) =$ {t[n2]:.1f}")
+ax.plot(r, gammaBH[n3,:], color="green", label=rf"$t\Omega_0(r = {r_norm}R_g) =$ {t[n3]:.1f}")
+ax.plot(r, gammaBH[n4,:], color="black", linestyle="dashed", label=rf"$t\Omega_0(r = {r_norm}R_g) =$ {t[n4]:.1f}")
+ax.set_xlim((r_min, r_max))
+ax.set_ylim((-180,180))
+yplot = np.linspace(-180, 180, 5)
+ax.set_yticks(yplot)
 xplot = np.linspace(r_min, r_max, 5)
 xl = [f"{i:.0f}" for i in xplot]
 ax.set_xticks(xplot, xl)
@@ -223,7 +229,7 @@ xplot = np.linspace(0, n_orbit, 5)
 xl = [f"{i:.0f}" for i in xplot]
 ax.set_xticks(xplot, xl)
 ax.set_ylim(bottom=0)
-ax.set_xlabel(r"$t\Omega_0(R=1)$ $[-]$")
+ax.set_xlabel(rf"$t\Omega_0(r={r_norm}R_g)$ $[-]$")
 ax.set_ylabel(r"$\beta$ $[$°$]$")
 ax.tick_params(axis='y', which='both', direction='in', right=True, width=w, length=l)
 ax.tick_params(axis='x', which='both', direction='in', top=True, width=w, length=l)
@@ -232,16 +238,19 @@ for spine in ax.spines.values():
 ax.grid()
 
 ax = axs[1]
-ax.plot(t, gammaBH[:,n0], color="black", linestyle="dotted", label=rf"$r =$ {r[n0]:.1f}")
-ax.plot(t, gammaBH[:,n1], color="red", label=rf"$r =$ {r[n1]:.1f}")
-ax.plot(t, gammaBH[:,n2], color="blue", label=rf"$r =$ {r[n2]:.1f}")
-ax.plot(t, gammaBH[:,n3], color="green", label=rf"$r =$ {r[n3]:.1f}")
-ax.plot(t, gammaBH[:,n4], color="black", linestyle="dashed", label=rf"$r =$ {r[n4]:.1f}")
+ax.plot(t, gammaBH[:,n0], color="black", linestyle="dotted", label=rf"$r =$ {r[n0]:.1f}$R_g$")
+ax.plot(t, gammaBH[:,n1], color="red", label=rf"$r =$ {r[n1]:.1f}$R_g$")
+ax.plot(t, gammaBH[:,n2], color="blue", label=rf"$r =$ {r[n2]:.1f}$R_g$")
+ax.plot(t, gammaBH[:,n3], color="green", label=rf"$r =$ {r[n3]:.1f}$R_g$")
+ax.plot(t, gammaBH[:,n4], color="black", linestyle="dashed", label=rf"$r =$ {r[n4]:.1f}$R_g$")
 ax.set_xlim((0, n_orbit))
+ax.set_ylim((-180,180))
+yplot = np.linspace(-180, 180, 5)
+ax.set_yticks(yplot)
 xplot = np.linspace(0, n_orbit, 5)
 xl = [f"{i:.0f}" for i in xplot]
 ax.set_xticks(xplot, xl)
-ax.set_xlabel(r"$t\Omega_0(R=1)$ $[-]$")
+ax.set_xlabel(rf"$t\Omega_0(r={r_norm}R_g)$ $[-]$")
 ax.set_ylabel(r"$\gamma$ $[$°$]$")
 ax.tick_params(axis='y', which='both', direction='in', right=True, width=w, length=l)
 ax.tick_params(axis='x', which='both', direction='in', top=True, width=w, length=l)
@@ -269,7 +278,7 @@ formats = tkr.FormatStrFormatter('%.1f')
 cbar = fig.colorbar(pc0, ax=ax, location="bottom", pad=pad, shrink=shrink, format=formats, ticks=ticks)
 ax.tick_params(axis='both', direction='in', color='white', width=w, length=l, pad=lpad)
 ax.set_facecolor("black")
-ax.set_xlabel(r"$t\Omega_0(r=1)$ $[-]$")
+ax.set_xlabel(rf"$t\Omega_0(r={r_norm}R_g)$ $[-]$")
 ax.set_ylabel(r"$r$ $[R_g]$", labelpad=lpad)
 ax.set_xlim((0, n_orbit))
 xplot = np.linspace(0, n_orbit, 5)
@@ -287,17 +296,17 @@ for spine in ax.spines.values():
     spine.set_linewidth(w)
 
 ax = axs[1]
-ax.set_title(r"$\Sigma/\Sigma(t=0)$ $[-]$")
-ticks = np.linspace(-9, 1, 5)
+ax.set_title(r"$\log(\Sigma/\Sigma_0)$ $[-]$")
+ticks = np.linspace(-3, 1, 5)
 Sigma_PLOT = np.zeros_like(Sigma)
 for n in range(t.size):
     Sigma_PLOT[n,:] = Sigma[n,:] / Sigma[0,:]
-pc0 = ax.pcolormesh(T, R, np.log10(Sigma_PLOT), cmap="inferno", vmin=-9, vmax=1)
+pc0 = ax.pcolormesh(T, R, np.log10(Sigma_PLOT), cmap="inferno", vmin=-3, vmax=1)
 formats = tkr.FormatStrFormatter('%.0f')
 cbar = fig.colorbar(pc0, ax=ax, location="bottom", pad=pad, shrink=shrink, format=formats, ticks=ticks)
 ax.tick_params(axis='both', direction='in', color='white', width=w, length=l, pad=lpad)
 ax.set_facecolor("black")
-ax.set_xlabel(r"$t\Omega_0(r=1)$ $[-]$")
+ax.set_xlabel(rf"$t\Omega_0(r={r_norm}R_g)$ $[-]$")
 ax.set_ylabel(r"$r$ $[R_g]$", labelpad=lpad)
 ax.set_xlim((0, n_orbit))
 xplot = np.linspace(0, n_orbit, 5)
@@ -328,7 +337,7 @@ fig, axs = plt.subplots(1, 2, figsize=(10, 5))
 
 ax = axs[0]
 ax.plot(r, omega_perp**2/omega_K**2, color="black")
-ax.set_xlim((r_min-1, r_max))
+ax.set_xlim((r_min, r_max))
 ax.set_xlabel(r"$r$ $[R_g]$")
 xplot = np.linspace(r_min, r_max, 5)
 xl = [f"{i:.0f}" for i in xplot]
@@ -345,7 +354,7 @@ ax.grid()
 
 ax = axs[1]
 ax.plot(r, kappa2_perp/omega_K**2, color="black")
-ax.set_xlim((r_min-1, r_max))
+ax.set_xlim((r_min, r_max))
 ax.set_xlabel(r"$r$ $[R_g]$")
 ax.set_xticks(xplot, xl)
 ax.set_yscale("log")
@@ -370,7 +379,7 @@ fig, axs = plt.subplots(1, figsize=(5, 5))
 
 ax = axs
 ax.plot(r, M_dot/M_dot_visc, color="black")
-ax.set_xlim((r_min-1, r_max))
+ax.set_xlim((r_min, r_max))
 ax.set_xlabel(r"$r$ $[R_g]$")
 ax.set_xticks(xplot, xl)
 ax.set_yscale("log")
@@ -428,7 +437,8 @@ for n in range(n_vtk):
     quantities = {
         "densityFloor": densityFloor,
         "rho": rho,
-        "beta_0": beta_0
+        "beta_0": beta_0,
+        "r_norm": r_norm
     }
     MASS_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, False, mass_plots, f"mass_{n}", t[n_analysis])
     MASS_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, True, mass_zoom_plots, f"mass_zoom_{n}", t[n_analysis])
@@ -436,13 +446,17 @@ for n in range(n_vtk):
 
     # velocity plots ------------------------------------------------------------------------------------------------------------------------
     quantities = {
-        "q_r": v_r*mask/c_s,
-        "q_th": v_theta*mask/c_s,
-        "q_phi": v_phi*mask/c_s,
-        "title_r": r"$v_r/c_s$ $[-]$",
-        "title_th": r"$v_\theta/c_s$ $[-]$",
-        "title_phi": r"$v_\varphi/c_s$ $[-]$",
-        "beta_0": beta_0
+        "q_r": v_r*mask,
+        "q_th": v_theta*mask,
+        "q_phi": v_phi*mask,
+        "buff_r": 0.1,
+        "buff_th": 0.1,
+        "buff_phi": 0.5,
+        "title_r": r"$v_r$ $[$Code Units$]$",
+        "title_th": r"$v_\theta$ $[$Code Units$]$",
+        "title_phi": r"$v_\varphi$ $[$Code Units$]$",
+        "beta_0": beta_0,
+        "r_norm": r_norm
     }
     VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, "xz", False, velocity_xz_plots, f"velocity_xz_{n}", t[n_analysis])
     VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, "xz", True, velocity_zoom_xz_plots, f"velocity_zoom_xz_{n}", t[n_analysis])
@@ -450,13 +464,17 @@ for n in range(n_vtk):
     VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, "yz", True, velocity_zoom_yz_plots, f"velocity_zoom_yz_{n}", t[n_analysis])
 
     quantities = {
-        "q_r": Vcrossh_r*mask/(omega_orbit * c_s),
-        "q_th": Vcrossh_th*mask/(omega_orbit * c_s),
-        "q_phi": Vcrossh_phi*mask/(omega_orbit * c_s),
-        "title_r": r'$(v\times h)_r/(\omega_\mathrm{orbit}c_s)$ $[-]$',
-        "title_th": r'$(v\times h)_\theta/(\omega_\mathrm{orbit}c_s)$ $[-]$',
-        "title_phi": r'$(v\times h)_\varphi/(\omega_\mathrm{orbit}c_s)$ $[-]$',
-        "beta_0": beta_0
+        "q_r": Vcrossh_r*mask,
+        "q_th": Vcrossh_th*mask,
+        "q_phi": Vcrossh_phi*mask,
+        "buff_r": 0.005,
+        "buff_th": 0.005,
+        "buff_phi": 0.002,
+        "title_r": r'$(v\times h)_r$ $[$Code Units$]$',
+        "title_th": r'$(v\times h)_\theta$ $[$Code Units$]$',
+        "title_phi": r'$(v\times h)_\varphi$ $[$Code Units$]$',
+        "beta_0": beta_0,
+        "r_norm": r_norm
     }
     VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, "xz", True, sourceTerm_zoom_xz_plots, f"sourceTerm_zoom_xz_{n}", t[n_analysis])
     VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, "yz", True, sourceTerm_zoom_yz_plots, f"sourceTerm_zoom_yz_{n}", t[n_analysis])

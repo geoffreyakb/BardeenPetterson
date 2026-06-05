@@ -133,6 +133,7 @@ def MASS_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, zoom, list_pl
     densityFloor = quantities["densityFloor"]
     rho = quantities["rho"]
     beta_0 = quantities["beta_0"]
+    r_norm = quantities["r_norm"]
 
     R, TH = np.meshgrid(r_vtk, theta_vtk)
 
@@ -146,7 +147,7 @@ def MASS_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, zoom, list_pl
     x_plus = X_cut_plus.flatten()
     x_minus = X_cut_minus.flatten()
     ax = axs[0]
-    ax.set_title(r'$\log(\rho/\rho_0)$ $[-]$')
+    ax.set_title(r'$\log(\rho)$ $[$Code Units$]$')
     ticks = np.linspace(np.log10(densityFloor), 0, 5)
     pc0 = ax.pcolormesh(X_cut_plus, Z, np.log10(rho[phi_cut_plus,:,:]), cmap="inferno", vmin=np.log10(densityFloor), vmax=0)
     pc0 = ax.pcolormesh(X_cut_minus, Z, np.log10(rho[phi_cut_minus,:,:]), cmap="inferno", vmin=np.log10(densityFloor), vmax=0)
@@ -154,12 +155,12 @@ def MASS_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, zoom, list_pl
     cbar = fig.colorbar(pc0, ax=ax, location="bottom", pad=pad, shrink=shrink, format=formats, ticks=ticks)
     if (beta_0 != 0):
         wh = (x_plus > r_min/np.sqrt(1 + 1/np.sin(-beta_0)**2)) & (x_plus < r_max/np.sqrt(1 + 1/np.sin(-beta_0)**2))
-        ax.plot(x_plus[wh], x_plus[wh]/np.sin(-beta_0), color="white")
+        ax.plot(x_plus[wh], x_plus[wh]/np.sin(-beta_0), color="dimgray")
         wh = (x_minus < -r_min/np.sqrt(1 + 1/np.sin(-beta_0)**2)) & (x_minus > -r_max/np.sqrt(1 + 1/np.sin(-beta_0)**2))
-        ax.plot(x_minus[wh], x_minus[wh]/np.sin(-beta_0), color="white")
+        ax.plot(x_minus[wh], x_minus[wh]/np.sin(-beta_0), color="dimgray")
     else:
-        ax.vlines(0, -r_max, -r_min, color="white")
-        ax.vlines(0, r_min, r_max, color="white")
+        ax.vlines(0, -r_max, -r_min, color="dimgray")
+        ax.vlines(0, r_min, r_max, color="dimgray")
     ax.tick_params(axis='both', direction='in', color='white', width=w, length=l, pad=lpad)
     ax.set_facecolor("dimgray")
     ax.set_xlabel(x_label)
@@ -195,14 +196,14 @@ def MASS_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, zoom, list_pl
     x_plus = X_cut_plus.flatten()
     x_minus = X_cut_minus.flatten()
     ax = axs[1]
-    ax.set_title(r'$\log(\rho/\rho_0)$ $[-]$')
+    ax.set_title(r'$\log(\rho)$ $[$Code Units$]$')
     ticks = np.linspace(np.log10(densityFloor), 0, 5)
     pc0 = ax.pcolormesh(X_cut_plus, Z, np.log10(rho[phi_cut_plus,:,:]), cmap="inferno", vmin=np.log10(densityFloor), vmax=0)
     pc0 = ax.pcolormesh(X_cut_minus, Z, np.log10(rho[phi_cut_minus,:,:]), cmap="inferno", vmin=np.log10(densityFloor), vmax=0)
     formats = tkr.FormatStrFormatter('%.0f')
     cbar = fig.colorbar(pc0, ax=ax, location="bottom", pad=pad, shrink=shrink, format=formats, ticks=ticks)
-    ax.vlines(0, -r_max, -r_min, color="white")
-    ax.vlines(0, r_min, r_max, color="white")
+    ax.vlines(0, -r_max, -r_min, color="dimgray")
+    ax.vlines(0, r_min, r_max, color="dimgray")
     ax.tick_params(axis='both', direction='in', color='white', width=w, length=l, pad=lpad)
     ax.set_facecolor("dimgray")
     ax.set_xlabel(x_label)
@@ -232,7 +233,7 @@ def MASS_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, zoom, list_pl
     for spine in ax.spines.values():
         spine.set_linewidth(w)
 
-    fig.suptitle(r"$t\Omega_0(r=1) =$ " + f"{time:.0f}")
+    fig.suptitle(rf"$t\Omega_0(r={r_norm}R_g) =$ " + f"{time:.0f}")
     fig.tight_layout()
     plt.savefig(f"./output/plots/{plots_name}.png", bbox_inches='tight', dpi=300)
     plt.close()
@@ -242,10 +243,14 @@ def VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, cut, zoom
     q_r = quantities["q_r"]
     q_th = quantities["q_th"]
     q_phi = quantities["q_phi"]
+    buff_r = quantities["buff_r"]
+    buff_th = quantities["buff_th"]
+    buff_phi = quantities["buff_phi"]
     title_r = quantities["title_r"]
     title_th = quantities["title_th"]
     title_phi = quantities["title_phi"]
     beta_0 = quantities["beta_0"]
+    r_norm = quantities["r_norm"]
 
     # coordinates -----------------------------------------------------------------------------------------------------------------------
     R, TH = np.meshgrid(r_vtk, theta_vtk)
@@ -267,20 +272,21 @@ def VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, cut, zoom
 
     ax = axs[0]
     ax.set_title(title_r)
-    buff = np.max(np.abs(q_r))
+    # buff = np.max(np.abs(q_r))
+    buff = buff_r
     ticks = np.linspace(-buff, buff, 5)
     pc0 = ax.pcolormesh(X_cut_plus, Z, q_r[phi_cut_plus,:,:], cmap="berlin", vmin=-buff, vmax=buff)
     pc0 = ax.pcolormesh(X_cut_minus, Z, q_r[phi_cut_minus,:,:], cmap="berlin", vmin=-buff, vmax=buff)
-    formats = tkr.FormatStrFormatter('%.1f')
+    formats = tkr.FormatStrFormatter('%.1e')
     cbar = fig.colorbar(pc0, ax=ax, location="bottom", pad=pad, shrink=shrink, format=formats, ticks=ticks)
     if cut == "xz" and (beta_0 != 0):
         wh = (x_plus > r_min/np.sqrt(1 + 1/np.sin(-beta_0)**2)) & (x_plus < r_max/np.sqrt(1 + 1/np.sin(-beta_0)**2))
-        ax.plot(x_plus[wh], x_plus[wh]/np.sin(-beta_0), color="white")
+        ax.plot(x_plus[wh], x_plus[wh]/np.sin(-beta_0), color="dimgray")
         wh = (x_minus < -r_min/np.sqrt(1 + 1/np.sin(-beta_0)**2)) & (x_minus > -r_max/np.sqrt(1 + 1/np.sin(-beta_0)**2))
-        ax.plot(x_minus[wh], x_minus[wh]/np.sin(-beta_0), color="white")
+        ax.plot(x_minus[wh], x_minus[wh]/np.sin(-beta_0), color="dimgray")
     else:
-        ax.vlines(0, -r_max, -r_min, color="white")
-        ax.vlines(0, r_min, r_max, color="white")
+        ax.vlines(0, -r_max, -r_min, color="dimgray")
+        ax.vlines(0, r_min, r_max, color="dimgray")
     ax.tick_params(axis='both', direction='in', color='white', width=w, length=l, pad=lpad)
     ax.set_facecolor("dimgray")
     ax.set_xlabel(x_label)
@@ -310,20 +316,21 @@ def VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, cut, zoom
 
     ax = axs[1]
     ax.set_title(title_th)
-    buff = np.max(np.abs(q_th))
+    # buff = np.max(np.abs(q_th))
+    buff = buff_th
     ticks = np.linspace(-buff, buff, 5)
     pc0 = ax.pcolormesh(X_cut_plus, Z, q_th[phi_cut_plus,:,:], cmap="berlin", vmin=-buff, vmax=buff)
     pc0 = ax.pcolormesh(X_cut_minus, Z, q_th[phi_cut_minus,:,:], cmap="berlin", vmin=-buff, vmax=buff)
-    formats = tkr.FormatStrFormatter('%.1f')
+    formats = tkr.FormatStrFormatter('%.1e')
     cbar = fig.colorbar(pc0, ax=ax, location="bottom", pad=pad, shrink=shrink, format=formats, ticks=ticks)
     if cut == "xz" and (beta_0 != 0):
         wh = (x_plus > r_min/np.sqrt(1 + 1/np.sin(-beta_0)**2)) & (x_plus < r_max/np.sqrt(1 + 1/np.sin(-beta_0)**2))
-        ax.plot(x_plus[wh], x_plus[wh]/np.sin(-beta_0), color="white")
+        ax.plot(x_plus[wh], x_plus[wh]/np.sin(-beta_0), color="dimgray")
         wh = (x_minus < -r_min/np.sqrt(1 + 1/np.sin(-beta_0)**2)) & (x_minus > -r_max/np.sqrt(1 + 1/np.sin(-beta_0)**2))
-        ax.plot(x_minus[wh], x_minus[wh]/np.sin(-beta_0), color="white")
+        ax.plot(x_minus[wh], x_minus[wh]/np.sin(-beta_0), color="dimgray")
     else:
-        ax.vlines(0, -r_max, -r_min, color="white")
-        ax.vlines(0, r_min, r_max, color="white")
+        ax.vlines(0, -r_max, -r_min, color="dimgray")
+        ax.vlines(0, r_min, r_max, color="dimgray")
     ax.tick_params(axis='both', direction='in', color='white', width=w, length=l, pad=lpad)
     ax.set_facecolor("dimgray")
     ax.set_xlabel(x_label)
@@ -354,20 +361,21 @@ def VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, cut, zoom
 
     ax = axs[2]
     ax.set_title(title_phi)
-    buff = np.max(np.abs(q_phi))
+    # buff = np.max(np.abs(q_phi))
+    buff = buff_phi
     ticks = np.linspace(-buff, buff, 5)
     pc0 = ax.pcolormesh(X_cut_plus, Z, q_phi[phi_cut_plus,:,:], cmap="berlin", vmin=-buff, vmax=buff)
     pc0 = ax.pcolormesh(X_cut_minus, Z, q_phi[phi_cut_minus,:,:], cmap="berlin", vmin=-buff, vmax=buff)
-    formats = tkr.FormatStrFormatter('%.1f')
+    formats = tkr.FormatStrFormatter('%.1e')
     cbar = fig.colorbar(pc0, ax=ax, location="bottom", pad=pad, shrink=shrink, format=formats, ticks=ticks)
     if cut == "xz" and (beta_0 != 0):
         wh = (x_plus > r_min/np.sqrt(1 + 1/np.sin(-beta_0)**2)) & (x_plus < r_max/np.sqrt(1 + 1/np.sin(-beta_0)**2))
-        ax.plot(x_plus[wh], x_plus[wh]/np.sin(-beta_0), color="white")
+        ax.plot(x_plus[wh], x_plus[wh]/np.sin(-beta_0), color="dimgray")
         wh = (x_minus < -r_min/np.sqrt(1 + 1/np.sin(-beta_0)**2)) & (x_minus > -r_max/np.sqrt(1 + 1/np.sin(-beta_0)**2))
-        ax.plot(x_minus[wh], x_minus[wh]/np.sin(-beta_0), color="white")
+        ax.plot(x_minus[wh], x_minus[wh]/np.sin(-beta_0), color="dimgray")
     else:
-        ax.vlines(0, -r_max, -r_min, color="white")
-        ax.vlines(0, r_min, r_max, color="white")
+        ax.vlines(0, -r_max, -r_min, color="dimgray")
+        ax.vlines(0, r_min, r_max, color="dimgray")
     ax.tick_params(axis='both', direction='in', color='white', width=w, length=l, pad=lpad)
     ax.set_facecolor("dimgray")
     ax.set_xlabel(x_label)
@@ -397,41 +405,11 @@ def VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, cut, zoom
     for spine in ax.spines.values():
         spine.set_linewidth(w)
 
-    fig.suptitle(r"$t\Omega_0(r=1) =$ " + f"{time:.0f}")
+    fig.suptitle(rf"$t\Omega_0(r={r_norm}R_g) =$ " + f"{time:.0f}")
     fig.tight_layout()
     plt.savefig(f"./output/plots/{plots_name}.png", bbox_inches='tight', dpi=300)
     plt.close()
     list_plots.append(f"./output/plots/{plots_name}.png")
-
-# def THEORETICAL_ROTATION_CURVE(r_vtk, Tilt_init, spin, gravity, source_term):
-#     tilt = Tilt_init * np.pi / 180
-
-#     if source_term == False:
-#         if gravity == "Kepler":
-#             POTENTIAL = 1/r_vtk**2
-#         elif gravity == "PW":
-#             POTENTIAL = 1/(r_vtk - 2)**2
-#         elif gravity == "Einstein":
-#             POTENTIAL = 1/r_vtk**2 + 6/r_vtk**3
-#         omega_th = np.sqrt(POTENTIAL / r_vtk)
-#     else:
-#         a = r_vtk
-#         b = 2 * np.cos(tilt) * spin / r_vtk**2
-#         if gravity == "Kepler":
-#             c = - 1/r_vtk**2
-#         elif gravity == "PW":
-#             c = - 1/(r_vtk - 2)**2
-#         elif gravity == "Einstein":
-#             c = - 1/r_vtk**2 - 6/r_vtk**3
-#         delta = b**2 - 4*a*c
-#         omega_th = (-b + np.sqrt(delta)) / (2*a)
-        
-#     kappa_2_th = 4*omega_th**2 + 2*r_vtk*omega_th*np.gradient(omega_th, r_vtk)
-
-#     if r_vtk[np.where(kappa_2_th < 0)].size == 0:
-#         return omega_th, kappa_2_th, 0
-#     else:
-#         return omega_th, kappa_2_th, r_vtk[np.where(kappa_2_th < 0)[0][-1]]
 
 def KEPLER(r_vtk):
     return np.sqrt(1/r_vtk**3)
