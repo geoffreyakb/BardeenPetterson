@@ -16,7 +16,7 @@ Analysis::Analysis(Input &input, Grid &grid, DataBlock &data) : grid(grid), gh(g
     this->alpha = input.Get<real>("Setup","alpha",0);
     // Output formatting
     this->countAverage = 0;
-    data.dump->RegisterVariable(&countAverage, "analysis_count_average");       // DOES NOT WORK ???
+    data.dump->RegisterVariable(&countAverage, "analysis_count");       // DOES NOT WORK ???
     this->precision = 10;
     this->column_width = 2*precision;
     this->pathAnalysisFolder = "output/analysis/";

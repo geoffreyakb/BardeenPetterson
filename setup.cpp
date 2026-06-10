@@ -5,6 +5,7 @@
 real epsilonGlob;
 real alphaGlob;
 real densityFloorGlob;
+real rminGlob;
 enum GravityPotential {Kepler, Einstein, PW};
 GravityPotential gravityGlob;
 real tiltGlob;
@@ -75,31 +76,45 @@ void GravitomagneticTerm(Hydro *hydro, const real t, const real dtin) {
     real Sy = ZERO_F;
     real Sz = spin * cos(-tilt);
 
+    real densityFloor = densityFloorGlob;
+
     idefix_for("GravitomagneticTerm",
         0, data->np_tot[KDIR],
         0, data->np_tot[JDIR],
         0, data->np_tot[IDIR],
         KOKKOS_LAMBDA (int k, int j, int i) {
-            real r = x1(i);
-            real th = x2(j);
-            real phi = x3(k);
-            real Vr = Vc(VX1,k,j,i);
-            real Vth = Vc(VX2,k,j,i);
-            real Vphi = Vc(VX3,k,j,i);
+            if (Vc(RHO,k,j,i) > densityFloor) {
+                real r = x1(i);
+                real th = x2(j);
+                real phi = x3(k);
+                real Vr = Vc(VX1,k,j,i);
+                real Vth = Vc(VX2,k,j,i);
+                real Vphi = Vc(VX3,k,j,i);
 
-            real Sr = sin(th)*cos(phi)*Sx + sin(th)*sin(phi)*Sy + cos(th)*Sz;
-            real Sth = cos(th)*cos(phi)*Sx + cos(th)*sin(phi)*Sy - sin(th)*Sz;
-            real Sphi = - sin(phi)*Sx + cos(phi)*Sy;
-            real hr = -4*Sr / pow(r,3);
-            real hth = 2*Sth / pow(r,3);
-            real hphi = 2*Sphi / pow(r,3);
-            real Vcrossh_r = Vth*hphi - Vphi*hth;
-            real Vcrossh_th = Vphi*hr - Vr*hphi;
-            real Vcrossh_phi = Vr*hth - Vth*hr;
+                real Sr = sin(th)*cos(phi)*Sx + sin(th)*sin(phi)*Sy + cos(th)*Sz;
+                real Sth = cos(th)*cos(phi)*Sx + cos(th)*sin(phi)*Sy - sin(th)*Sz;
+                real Sphi = - sin(phi)*Sx + cos(phi)*Sy;
+                real hr = -4*Sr / pow(r,3);
+                real hth = 2*Sth / pow(r,3);
+                real hphi = 2*Sphi / pow(r,3);
+                real Vcrossh_r = Vth*hphi - Vphi*hth;
+                real Vcrossh_th = Vphi*hr - Vr*hphi;
+                real Vcrossh_phi = Vr*hth - Vth*hr;
 
-            Uc(MX1,k,j,i) += dt * Vc(RHO,k,j,i) * Vcrossh_r;
-            Uc(MX2,k,j,i) += dt * Vc(RHO,k,j,i) * Vcrossh_th;
-            Uc(MX3,k,j,i) += dt * Vc(RHO,k,j,i) * Vcrossh_phi;
+                Uc(MX1,k,j,i) += dt * Vc(RHO,k,j,i) * Vcrossh_r;
+                Uc(MX2,k,j,i) += dt * Vc(RHO,k,j,i) * Vcrossh_th;
+                Uc(MX3,k,j,i) += dt * Vc(RHO,k,j,i) * Vcrossh_phi;
+            }
+            else {
+                real r = x1(i);
+                // real omega = sqrt(pow(Vc(VX1,k,j,i), 2) + pow(Vc(VX2,k,j,i), 2) + pow(Vc(VX3,k,j,i), 2));
+                real omega = 1/(2*dt);
+                Uc(MX1,k,j,i) -= dt*omega * Vc(RHO,k,j,i) * Vc(VX1,k,j,i);
+                Uc(MX2,k,j,i) -= dt*omega * Vc(RHO,k,j,i) * Vc(VX2,k,j,i);
+                // if (dt*omega > 1.0) {
+                //     idfx::cout << "Violating CFL condition probably" << std::endl; 
+                // }
+            }
     });
 }
 
@@ -127,11 +142,46 @@ void KeplerPotential(DataBlock &data, const real t, IdefixArray1D<real> &x1, Ide
     });
 }
 
+void BodyForce(DataBlock &data, const real t, IdefixArray4D<real> &force) {
+    idfx::pushRegion("BodyForce");
+    IdefixArray4D<real> Vc = data.hydro->Vc;
+    IdefixArray1D<real> r = data.x[IDIR];
+    GravityPotential gravity = gravityGlob;
+    real densityFloor = densityFloorGlob;
+
+    idefix_for("BodyForce",
+                data.beg[KDIR] , data.end[KDIR],
+                data.beg[JDIR] , data.end[JDIR],
+                data.beg[IDIR] , data.end[IDIR],
+                KOKKOS_LAMBDA (int k, int j, int i) {
+                    if (Vc(RHO,k,j,i) > densityFloor) {
+                        switch (gravity) {
+                            case GravityPotential::Kepler:
+                                force(IDIR,k,j,i) = - 1/pow(r(i),2);
+                            break;
+                            case GravityPotential::Einstein:
+                                force(IDIR,k,j,i) = - 1/pow(r(i),2) - 6/pow(r(i),3);
+                            break;
+                            case GravityPotential::PW:
+                                force(IDIR,k,j,i) = - 1/pow(r(i)-2,2);
+                            break;
+                        }
+                    }
+                    else {
+                        force(IDIR,k,j,i) = ZERO_F;
+                    }
+                    force(JDIR,k,j,i) = ZERO_F;
+                    force(KDIR,k,j,i) = ZERO_F;
+        });
+
+    idfx::popRegion();
+}
 
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
     epsilonGlob = input.Get<real>("Setup", "epsilon", 0);
     alphaGlob = input.Get<real>("Setup", "alpha", 0);
     densityFloorGlob = input.Get<real>("Setup", "densityFloor", 0);
+    rminGlob = input.Get<real>("Grid", "X1-grid", 1);
     if (input.Get<std::string>("Setup", "gravity", 0) == "Kepler") gravityGlob = GravityPotential::Kepler;
     else if (input.Get<std::string>("Setup", "gravity", 0) == "Einstein") gravityGlob = GravityPotential::Einstein;
     else if (input.Get<std::string>("Setup", "gravity", 0) == "PW") gravityGlob = GravityPotential::PW;
@@ -153,6 +203,7 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
             data.gravity->EnrollPotential(&PaczynskiWiitaPotential);
         break;
     }
+    // data.gravity->EnrollBodyForce(BodyForce);
     data.hydro->EnrollUserSourceTerm(&GravitomagneticTerm);
 
     analysis = new Analysis(input, grid, data);
@@ -162,6 +213,7 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
 void Setup::InitFlow(DataBlock &data) {
     DataBlockHost d(data);
     real epsilon = epsilonGlob;
+    GravityPotential gravity = gravityGlob;
     real r, th;
 
     for(int k = 0; k < d.np_tot[KDIR]; k++) {
@@ -180,7 +232,7 @@ void Setup::InitFlow(DataBlock &data) {
                 d.Vc(VX2,k,j,i) = ZERO_F;
 
                 real grad_Phi;
-                switch (gravityGlob) {
+                switch (gravity) {
                     case GravityPotential::Kepler:
                         grad_Phi = 1/pow(r,2);
                     break;

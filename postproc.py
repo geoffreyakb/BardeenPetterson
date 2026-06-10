@@ -35,13 +35,13 @@ r, Sigma, rho_mean, L, beta, gamma, LBH, betaBH, gammaBH, rho_Vr, rho_Vperp = RE
 # Normalizations and useful quantities
 # ----------------------------------------------------------------------------------
 # Time
-r_norm = 5         # cf. NP2000
+r_norm = 5
 grad_Phi = 0
 if gravity == "Kepler":
     grad_Phi = 1/r_norm**2
 elif gravity == "Einstein":
     grad_Phi = 1/r_norm**2 + 6/r_norm**3
-omega_orbit = 1/r_norm * np.sqrt(r_norm * grad_Phi)         # The 2pi is missing and it's normal
+omega_orbit = np.sqrt(r_norm * grad_Phi) / r_norm        # The 2pi is missing and it's normal (cf. NP2000)
 n_orbit = (t[-1]*omega_orbit)
 t *= omega_orbit
 T, R = np.meshgrid(t, r, indexing="ij")
@@ -107,7 +107,7 @@ xl[-1] = ""
 ax.set_xticks(xplot,xl)
 ax.set_ylim((r_min, r_max))
 yplot = np.linspace(r_min, r_max, 5)
-yl = [f"{i:.0f}" for i in yplot]
+yl = [f"{i:.1f}" for i in yplot]
 ax.set_yticks(yplot, yl)
 ax.yaxis.set_ticks_position('both')
 ax.xaxis.set_ticks_position('both')
@@ -118,10 +118,10 @@ ax = axs[1]
 ax.set_title(r"$\gamma$ $[$°$]$")
 buff = 180
 ticks = np.linspace(-buff, buff, 5)
-pc0 = ax.pcolormesh(T, R, gammaBH, cmap="berlin", vmin=-buff, vmax=buff)
+pc0 = ax.pcolormesh(T, R, gammaBH, cmap="Spectral_r", vmin=-buff, vmax=buff)
 formats = tkr.FormatStrFormatter('%.0f')
 cbar = fig.colorbar(pc0, ax=ax, location="bottom", pad=pad, shrink=shrink, format=formats, ticks=ticks)
-ax.tick_params(axis='both', direction='in', color='white', width=w, length=l, pad=lpad)
+ax.tick_params(axis='both', direction='in', color='black', width=w, length=l, pad=lpad)
 ax.set_facecolor("black")
 ax.set_xlabel(rf"$t\Omega_0(r={r_norm}R_g)$ $[-]$")
 ax.set_ylabel(r"$r$ $[R_g]$", labelpad=lpad)
@@ -136,7 +136,7 @@ xl[-1] = ""
 ax.set_xticks(xplot,xl)
 ax.set_ylim((r_min, r_max))
 yplot = np.linspace(r_min, r_max, 5)
-yl = [f"{i:.0f}" for i in yplot]
+yl = [f"{i:.1f}" for i in yplot]
 ax.set_yticks(yplot, yl)
 ax.yaxis.set_label_position("right")
 ax.yaxis.tick_right()
@@ -169,7 +169,7 @@ ax.plot(r, betaBH[n3,:], color="green")
 ax.plot(r, betaBH[n4,:], color="black", linestyle="dashed")
 ax.set_xlim((r_min, r_max))
 xplot = np.linspace(r_min, r_max, 5)
-xl = [f"{i:.0f}" for i in xplot]
+xl = [f"{i:.1f}" for i in xplot]
 ax.set_xticks(xplot, xl)
 ax.set_ylim(bottom=0)
 ax.set_xlabel(r"$r$ $[R_g]$")
@@ -191,7 +191,7 @@ ax.set_ylim((-180,180))
 yplot = np.linspace(-180, 180, 5)
 ax.set_yticks(yplot)
 xplot = np.linspace(r_min, r_max, 5)
-xl = [f"{i:.0f}" for i in xplot]
+xl = [f"{i:.1f}" for i in xplot]
 ax.set_xticks(xplot, xl)
 ax.set_xlabel(r"$r$ $[R_g]$")
 ax.set_ylabel(r"$\gamma$ $[$°$]$")
@@ -288,7 +288,7 @@ xl[-1] = ""
 ax.set_xticks(xplot,xl)
 ax.set_ylim((r_min, r_max))
 yplot = np.linspace(r_min, r_max, 5)
-yl = [f"{i:.0f}" for i in yplot]
+yl = [f"{i:.1f}" for i in yplot]
 ax.set_yticks(yplot, yl)
 ax.yaxis.set_ticks_position('both')
 ax.xaxis.set_ticks_position('both')
@@ -297,14 +297,14 @@ for spine in ax.spines.values():
 
 ax = axs[1]
 ax.set_title(r"$\log(\Sigma/\Sigma_0)$ $[-]$")
-ticks = np.linspace(-3, 1, 5)
+ticks = np.linspace(-2, 2, 5)
 Sigma_PLOT = np.zeros_like(Sigma)
 for n in range(t.size):
     Sigma_PLOT[n,:] = Sigma[n,:] / Sigma[0,:]
-pc0 = ax.pcolormesh(T, R, np.log10(Sigma_PLOT), cmap="inferno", vmin=-3, vmax=1)
+pc0 = ax.pcolormesh(T, R, np.log10(Sigma_PLOT), cmap="Spectral_r", vmin=-2, vmax=2)
 formats = tkr.FormatStrFormatter('%.0f')
 cbar = fig.colorbar(pc0, ax=ax, location="bottom", pad=pad, shrink=shrink, format=formats, ticks=ticks)
-ax.tick_params(axis='both', direction='in', color='white', width=w, length=l, pad=lpad)
+ax.tick_params(axis='both', direction='in', color='black', width=w, length=l, pad=lpad)
 ax.set_facecolor("black")
 ax.set_xlabel(rf"$t\Omega_0(r={r_norm}R_g)$ $[-]$")
 ax.set_ylabel(r"$r$ $[R_g]$", labelpad=lpad)
@@ -316,7 +316,7 @@ xl[-1] = ""
 ax.set_xticks(xplot,xl)
 ax.set_ylim((r_min, r_max))
 yplot = np.linspace(r_min, r_max, 5)
-yl = [f"{i:.0f}" for i in yplot]
+yl = [f"{i:.1f}" for i in yplot]
 ax.set_yticks(yplot, yl)
 ax.yaxis.set_label_position("right")
 ax.yaxis.tick_right()
@@ -340,7 +340,7 @@ ax.plot(r, omega_perp**2/omega_K**2, color="black")
 ax.set_xlim((r_min, r_max))
 ax.set_xlabel(r"$r$ $[R_g]$")
 xplot = np.linspace(r_min, r_max, 5)
-xl = [f"{i:.0f}" for i in xplot]
+xl = [f"{i:.1f}" for i in xplot]
 ax.set_xticks(xplot, xl)
 ax.set_yscale("log")
 ax.set_ylim((1e-3, 1e1))
@@ -409,13 +409,48 @@ velocity_zoom_yz_plots = []
 sourceTerm_zoom_xz_plots = []
 sourceTerm_zoom_yz_plots = []
 
+# max_vr = 0
+# max_vth = 0
+# max_vphi = 0
+# max_vCrossh_r = 0
+# max_vCrossh_th = 0
+# max_vCrossh_phi = 0
+# for n in range(n_vtk):
+#     r_vtk, theta_vtk, phi_vtk, rho, v_r, v_theta, v_phi = READ_VTK(n)
+#     PHI, TH, R = np.meshgrid(phi_vtk, theta_vtk, r_vtk, indexing="ij")
+
+#     Sx = np.sin(-beta_0) * spin
+#     Sy = 0
+#     Sz = np.cos(-beta_0) * spin
+#     Sr = np.sin(TH)*np.cos(PHI)*Sx + np.sin(TH)*np.sin(PHI)*Sy + np.cos(TH)*Sz
+#     Sth = np.cos(TH)*np.cos(PHI)*Sx + np.cos(TH)*np.sin(PHI)*Sy - np.sin(TH)*Sz
+#     Sphi = - np.sin(PHI)*Sx + np.cos(PHI)*Sy
+#     hr = -4*Sr / R**3
+#     hth = 2*Sth / R**3
+#     hphi = 2*Sphi / R**3
+#     Vcrossh_r = v_theta*hphi - v_phi*hth
+#     Vcrossh_th = v_phi*hr - v_r*hphi
+#     Vcrossh_phi = v_r*hth - v_theta*hr
+
+#     if np.max(np.abs(v_r)) > max_vr:
+#         max_vr = np.max(np.abs(v_r))
+#     if np.max(np.abs(v_theta)) > max_vth:
+#         max_vth = np.max(np.abs(v_theta))
+#     if np.max(np.abs(v_phi)) > max_vphi:
+#         max_vphi = np.max(np.abs(v_phi))
+#     if np.max(np.abs(Vcrossh_r)) > max_vCrossh_r:
+#         max_vCrossh_r = np.max(np.abs(Vcrossh_r))
+#     if np.max(np.abs(Vcrossh_th)) > max_vCrossh_th:
+#         max_vCrossh_th = np.max(np.abs(Vcrossh_th))
+#     if np.max(np.abs(Vcrossh_phi)) > max_vCrossh_phi:
+#         max_vCrossh_phi = np.max(np.abs(Vcrossh_phi))
+
 for n in range(n_vtk):
     n_analysis = int(n * conf["Output"]["vtk"] // conf["Output"]["analysis"])
     r_vtk, theta_vtk, phi_vtk, rho, v_r, v_theta, v_phi = READ_VTK(n)
     PHI, TH, R = np.meshgrid(phi_vtk, theta_vtk, r_vtk, indexing="ij")
 
     c_s = epsilon / np.sqrt(R)
-    mask = (rho > densityFloor * 2)
 
     # gravitomagnetic source term -----------------------------------------------------------------------------------------------------------------------
     Sx = np.sin(-beta_0) * spin
@@ -427,7 +462,6 @@ for n in range(n_vtk):
     hr = -4*Sr / R**3
     hth = 2*Sth / R**3
     hphi = 2*Sphi / R**3
-
     Vcrossh_r = v_theta*hphi - v_phi*hth
     Vcrossh_th = v_phi*hr - v_r*hphi
     Vcrossh_phi = v_r*hth - v_theta*hr
@@ -446,17 +480,19 @@ for n in range(n_vtk):
 
     # velocity plots ------------------------------------------------------------------------------------------------------------------------
     quantities = {
-        "q_r": v_r*mask,
-        "q_th": v_theta*mask,
-        "q_phi": v_phi*mask,
-        "buff_r": 0.1,
-        "buff_th": 0.1,
-        "buff_phi": 0.5,
+        "q_r": v_r,
+        "q_th": v_theta,
+        "q_phi": v_phi,
+        "buff_r": np.max(np.abs(v_r)),
+        "buff_th": np.max(np.abs(v_theta)),
+        "buff_phi": np.max(np.abs(v_phi)),
         "title_r": r"$v_r$ $[$Code Units$]$",
         "title_th": r"$v_\theta$ $[$Code Units$]$",
         "title_phi": r"$v_\varphi$ $[$Code Units$]$",
         "beta_0": beta_0,
-        "r_norm": r_norm
+        "r_norm": r_norm,
+        "rho": rho,
+        "densityFloor": densityFloor
     }
     VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, "xz", False, velocity_xz_plots, f"velocity_xz_{n}", t[n_analysis])
     VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, "xz", True, velocity_zoom_xz_plots, f"velocity_zoom_xz_{n}", t[n_analysis])
@@ -464,28 +500,28 @@ for n in range(n_vtk):
     VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, "yz", True, velocity_zoom_yz_plots, f"velocity_zoom_yz_{n}", t[n_analysis])
 
     quantities = {
-        "q_r": Vcrossh_r*mask,
-        "q_th": Vcrossh_th*mask,
-        "q_phi": Vcrossh_phi*mask,
-        "buff_r": 0.005,
-        "buff_th": 0.005,
-        "buff_phi": 0.002,
+        "q_r": Vcrossh_r,
+        "q_th": Vcrossh_th,
+        "q_phi": Vcrossh_phi,
+        "buff_r": np.max(np.abs(Vcrossh_r)),
+        "buff_th": np.max(np.abs(Vcrossh_th)),
+        "buff_phi": np.max(np.abs(Vcrossh_phi)),
         "title_r": r'$(v\times h)_r$ $[$Code Units$]$',
         "title_th": r'$(v\times h)_\theta$ $[$Code Units$]$',
         "title_phi": r'$(v\times h)_\varphi$ $[$Code Units$]$',
         "beta_0": beta_0,
-        "r_norm": r_norm
+        "r_norm": r_norm,
+        "rho": rho,
+        "densityFloor": densityFloor
     }
     VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, "xz", True, sourceTerm_zoom_xz_plots, f"sourceTerm_zoom_xz_{n}", t[n_analysis])
     VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, "yz", True, sourceTerm_zoom_yz_plots, f"sourceTerm_zoom_yz_{n}", t[n_analysis])
 
 MOVIE(mass_plots, "mass")
 MOVIE(mass_zoom_plots, "mass_zoom")
-
 MOVIE(velocity_xz_plots, "velocity_xz")
 MOVIE(velocity_zoom_xz_plots, "velocity_zoom_xz")
 MOVIE(velocity_yz_plots, "velocity_yz")
 MOVIE(velocity_zoom_yz_plots, "velocity_zoom_yz")
-
 MOVIE(sourceTerm_zoom_xz_plots, "sourceTerm_zoom_xz")
 MOVIE(sourceTerm_zoom_yz_plots, "sourceTerm_zoom_yz")
