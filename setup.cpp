@@ -59,6 +59,35 @@ void InternalBoundary(Hydro *hydro, const real t) {
                 });
 }
 
+void KeplerianBoundary(Hydro *hydro, int dir, BoundarySide side, const real t) {
+    auto *data = hydro->data;
+    IdefixArray1D<real> r = data->x[IDIR];
+    IdefixArray4D<real> Vc = hydro->Vc;
+    const int nxi = data->np_int[IDIR];
+    const int nxj = data->np_int[JDIR];
+    const int nxk = data->np_int[KDIR];
+    const int ighost = data->nghost[IDIR];
+    const int jghost = data->nghost[JDIR];
+    const int kghost = data->nghost[KDIR];
+
+    hydro->boundary->BoundaryFor("BoundaryOutflow", dir, side, KOKKOS_LAMBDA (int k, int j, int i) {
+        const int iref = (dir==IDIR) ? ighost + side*(nxi-1) : i;
+        const int jref = (dir==JDIR) ? jghost + side*(nxj-1) : j;
+        const int kref = (dir==KDIR) ? kghost + side*(nxk-1) : k;
+        const int sign = 1-2*side;
+
+        Vc(RHO,k,j,i) = Vc(RHO,kref,jref,iref);
+        if (sign*Vc(VX1,kref,jref,iref) >= ZERO_F) {
+            Vc(VX1,k,j,i) = ZERO_F;
+        }
+        else {
+            Vc(VX1,k,j,i) = Vc(VX1,kref,jref,iref);
+        }
+        Vc(VX2,k,j,i) = Vc(VX2,kref,jref,iref);
+        Vc(VX3,k,j,i) = Vc(VX3,kref,jref,iref) * sqrt(r(iref)/r(i));
+    });
+}
+
 void GravitomagneticTerm(Hydro *hydro, const real t, const real dtin) {
     auto *data = hydro->data;
     IdefixArray4D<real> Vc = hydro->Vc;
@@ -139,6 +168,7 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
     spinGlob = input.Get<real>("Setup", "spin", 0);
 
     data.hydro->EnrollInternalBoundary(&InternalBoundary);
+    data.hydro->EnrollUserDefBoundary(&KeplerianBoundary);
     data.hydro->EnrollIsoSoundSpeed(&MySoundSpeed);
     data.hydro->viscosity->EnrollViscousDiffusivity(&MyViscosity);
     switch (gravityGlob) {

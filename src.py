@@ -268,6 +268,8 @@ def VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, zoom, lis
     title_r = quantities["title_r"]
     title_th = quantities["title_th"]
     title_phi = quantities["title_phi"]
+    rho = quantities["rho"]
+    densityFloor = quantities["densityFloor"]
 
     R, TH = np.meshgrid(r_vtk, theta_vtk)
     phi_cut_plus = np.where(phi_vtk >= 0)[0][0]
@@ -282,6 +284,7 @@ def VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, zoom, lis
     buff = np.max(np.abs(q_r))
     ticks = np.linspace(-buff, buff, 5)
     pc0 = ax.pcolormesh(X_cut_plus, Z, q_r[phi_cut_plus,:,:], cmap="berlin", vmin=-buff, vmax=buff)
+    ax.contour(X_cut_plus, Z, rho[phi_cut_plus,:,:], levels=[densityFloor*2], alpha=0.75)
     cbar = fig.colorbar(pc0, ax=ax, location="bottom", pad=pad, shrink=shrink, format=formats, ticks=ticks)
     ax.tick_params(axis='both', direction='in', color='white', width=w, length=l, pad=lpad)
     ax.set_facecolor("dimgray")
@@ -317,6 +320,7 @@ def VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, zoom, lis
     buff = np.max(np.abs(q_th))
     ticks = np.linspace(-buff, buff, 5)
     pc0 = ax.pcolormesh(X_cut_plus, Z, q_th[phi_cut_plus,:,:], cmap="berlin", vmin=-buff, vmax=buff)
+    ax.contour(X_cut_plus, Z, rho[phi_cut_plus,:,:], levels=[densityFloor*2], alpha=0.75)
     cbar = fig.colorbar(pc0, ax=ax, location="bottom", pad=pad, shrink=shrink, format=formats, ticks=ticks)
     ax.tick_params(axis='both', direction='in', color='white', width=w, length=l, pad=lpad)
     ax.set_facecolor("dimgray")
@@ -353,6 +357,7 @@ def VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, zoom, lis
     buff = np.max(np.abs(q_phi))
     ticks = np.linspace(-buff, buff, 5)
     pc0 = ax.pcolormesh(X_cut_plus, Z, q_phi[phi_cut_plus,:,:], cmap="berlin", vmin=-buff, vmax=buff)
+    ax.contour(X_cut_plus, Z, rho[phi_cut_plus,:,:], levels=[densityFloor*2], alpha=0.75)
     cbar = fig.colorbar(pc0, ax=ax, location="bottom", pad=pad, shrink=shrink, format=formats, ticks=ticks)
     ax.tick_params(axis='both', direction='in', color='white', width=w, length=l, pad=lpad)
     ax.set_facecolor("dimgray")
@@ -417,3 +422,6 @@ def THEORETICAL_ROTATION_CURVE(R, Tilt_init, spin, gravity, v_r, dr_v_r, r_vtk):
 
 def KEPLER(r_vtk):
     return np.sqrt(1/r_vtk**3)
+
+def EINSTEIN(r_vtk):
+    return np.sqrt(1/r_vtk**3 + 6/r_vtk**4)

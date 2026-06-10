@@ -69,7 +69,10 @@ if spin != 0:
     zeta /= zeta_th
     eta /= eta_th
 else:
-    omega_K = KEPLER(r)
+    if gravity == "Kepler":
+        omega_K = KEPLER(r)
+    elif gravity == "Einstein":
+        omega_K = EINSTEIN(r)
     t_visc = 1 / (alpha * np.sqrt(omega_K)) * epsilon**(-2)       # To verify (especially that omega)
     M_dot_visc = Sigma[0,0]*(2*np.pi*R[0,0]**2*epsilon) / t_visc
     M_dot = 2*np.pi*R * Sigma * (-rho_Vr / rho_mean)
@@ -107,7 +110,10 @@ for n in range(n_vtk):
 
     omega = v_phi / r_vtk
     kappa2 = 4*omega**2 + r_vtk*np.gradient(omega**2, r_vtk)
-    omega_K = np.sqrt(1/r**3)
+    if gravity == "Kepler":
+        omega_K = KEPLER(r)
+    elif gravity == "Einstein":
+        omega_K = EINSTEIN(r)
 
     mass_conservation = 1/r_vtk**2 * np.gradient(r_vtk**2 * rho*v_r, r_vtk)
     dr_v_r = np.gradient(v_r, r_vtk)
@@ -183,14 +189,14 @@ ax.grid()
 # ax.legend()
 
 ax = axs[0,1]
-ax.plot(r, np.abs(radial_equilibrium_mean), color="red", label=r"Idefix with advection term")
-ax.plot(r, np.abs(radial_equilibrium2_mean), color="green", label=r"Idefix without advection term")
-ax.plot(r, np.abs(radial_equilibrium_thp_mean), color="black", linestyle="dashed", label=r"$v_r \partial_r v_r$")
+ax.plot(r, np.abs(radial_equilibrium_mean) / (r*omega_K**2), color="red", label=r"Idefix with advection term")
+ax.plot(r, np.abs(radial_equilibrium2_mean) / (r*omega_K**2), color="green", label=r"Idefix without advection term")
+ax.plot(r, np.abs(radial_equilibrium_mean - radial_equilibrium2_mean) / (r*omega_K**2), color="black", linestyle="dashed", label=r"Advection term")
 ax.set_xlim((r_min-1, r_max))
 ax.set_xlabel(r"$r$ [$R_g$]")
 ax.set_yscale("log")
 # ax.set_ylim((1e-6, 1e2))
-ax.set_ylabel(r"$v_r \partial_r v_r - v_\varphi^2/r - 2a/r^3 v_\varphi + \partial_r \Phi$ [Code units]")
+ax.set_ylabel(r"Radial equilibrium$ / (r\Omega_\mathrm{eq}^2)$ [-]")
 ax.tick_params(axis='y', which='both', direction='in', right=True, width=w, length=l)
 ax.tick_params(axis='x', which='both', direction='in', top=True, width=w, length=l)
 ax.tick_params(axis='y', which='minor', length=l_log, width=w)
@@ -217,7 +223,7 @@ ax.grid()
 ax.legend()
 
 ax = axs[1,0]
-ax.plot(r, v_r_mean/(r*omega_K)**2, color="red", label=r"$v_r^2/(r\Omega_K)^2$ $[-]$")
+ax.plot(r, v_r_mean/(r*omega_K)**2, color="red", label=r"$v_r^2/(r\Omega_\mathrm{eq})^2$ $[-]$")
 ax.plot(r, rho_mean_mean, color="blue", label=r"$\rho/\rho_0$ $[-]$")
 ax.set_xlim((r_min-1, r_max))
 ax.set_xlabel(r"$r$ [$R_g$]")
@@ -239,7 +245,7 @@ ax.set_xlim((r_min-1, r_max))
 ax.set_xlabel(r"$r$ [$R_g$]")
 ax.set_yscale("log")
 # ax.set_ylim((1e-2, 1e2))
-ax.set_ylabel(r"$\Omega^2 / \Omega_K^2$ $[-]$")
+ax.set_ylabel(r"$\Omega^2 / \Omega_\mathrm{eq}^2$ $[-]$")
 ax.tick_params(axis='y', which='both', direction='in', right=True, width=w, length=l)
 ax.tick_params(axis='x', which='both', direction='in', top=True, width=w, length=l)
 ax.tick_params(axis='y', which='minor', length=l_log, width=w)
@@ -256,7 +262,7 @@ ax.set_xlim((r_min-1, r_max))
 ax.set_xlabel(r"$r$ [$R_g$]")
 ax.set_yscale("log")
 # ax.set_ylim((1e-2, 1e2))
-ax.set_ylabel(r"$\kappa^2/\Omega_K^2$ $[-]$")
+ax.set_ylabel(r"$\kappa^2/\Omega_\mathrm{eq}^2$ $[-]$")
 ax.tick_params(axis='y', which='both', direction='in', right=True, width=w, length=l)
 ax.tick_params(axis='x', which='both', direction='in', top=True, width=w, length=l)
 ax.tick_params(axis='y', which='minor', length=l_log, width=w)
@@ -288,14 +294,14 @@ ax.grid()
 # ax.legend()
 
 ax = axs[0,1]
-ax.plot(r, np.abs(radial_equilibrium_mean), color="red", label=r"Idefix with advection term", marker=".")
-ax.plot(r, np.abs(radial_equilibrium2_mean), color="green", label=r"Idefix without advection term", marker=".")
-ax.plot(r, np.abs(radial_equilibrium_thp_mean), color="black", linestyle="dashed", label=r"$v_r \partial_r v_r$")
+ax.plot(r, np.abs(radial_equilibrium_mean) / (r*omega_K**2), color="red", label=r"Idefix with advection term", marker=".")
+ax.plot(r, np.abs(radial_equilibrium2_mean) / (r*omega_K**2), color="green", label=r"Idefix without advection term", marker=".")
+ax.plot(r, np.abs(radial_equilibrium_mean - radial_equilibrium2_mean) / (r*omega_K**2), color="black", linestyle="dashed", marker=".", label=r"Advection term")
 ax.set_xlim((r_min, r_min+0.5))
 ax.set_xlabel(r"$r$ [$R_g$]")
 ax.set_yscale("log")
 # ax.set_ylim((1e-6, 1e2))
-ax.set_ylabel(r"$v_r \partial_r v_r - v_\varphi^2/r - 2a/r^3 v_\varphi + \partial_r \Phi$ [Code units]")
+ax.set_ylabel(r"Radial equilibrium$/ (r\Omega_\mathrm{eq}^2)$ [-]")
 ax.tick_params(axis='y', which='both', direction='in', right=True, width=w, length=l)
 ax.tick_params(axis='x', which='both', direction='in', top=True, width=w, length=l)
 ax.tick_params(axis='y', which='minor', length=l_log, width=w)
@@ -322,7 +328,7 @@ ax.grid()
 ax.legend()
 
 ax = axs[1,0]
-ax.plot(r, v_r_mean/(r*omega_K)**2, color="red", label=r"$v_r^2/(r\Omega_K)^2$ $[-]$", marker=".")
+ax.plot(r, v_r_mean/(r*omega_K)**2, color="red", label=r"$v_r^2/(r\Omega_\mathrm{eq})^2$ $[-]$", marker=".")
 ax.plot(r, rho_mean_mean, color="blue", label=r"$\rho/\rho_0$ $[-]$", marker=".")
 ax.set_xlim((r_min, r_min+0.5))
 ax.set_xlabel(r"$r$ [$R_g$]")
@@ -344,7 +350,7 @@ ax.set_xlim((r_min, r_min+0.5))
 ax.set_xlabel(r"$r$ [$R_g$]")
 ax.set_yscale("log")
 # ax.set_ylim((1e-2, 1e2))
-ax.set_ylabel(r"$\Omega^2 / \Omega_K^2$ $[-]$")
+ax.set_ylabel(r"$\Omega^2 / \Omega_\mathrm{eq}^2$ $[-]$")
 ax.tick_params(axis='y', which='both', direction='in', right=True, width=w, length=l)
 ax.tick_params(axis='x', which='both', direction='in', top=True, width=w, length=l)
 ax.tick_params(axis='y', which='minor', length=l_log, width=w)
@@ -361,7 +367,7 @@ ax.set_xlim((r_min, r_min+0.5))
 ax.set_xlabel(r"$r$ [$R_g$]")
 ax.set_yscale("log")
 # ax.set_ylim((1e-2, 1e2))
-ax.set_ylabel(r"$\kappa^2/\Omega_K^2$ $[-]$")
+ax.set_ylabel(r"$\kappa^2/\Omega_\mathrm{eq}^2$ $[-]$")
 ax.tick_params(axis='y', which='both', direction='in', right=True, width=w, length=l)
 ax.tick_params(axis='x', which='both', direction='in', top=True, width=w, length=l)
 ax.tick_params(axis='y', which='minor', length=l_log, width=w)
@@ -597,7 +603,8 @@ for n in range(n_vtk):
     PHI, TH, R = np.meshgrid(phi_vtk, theta_vtk, r_vtk, indexing="ij")
 
     c_s = epsilon / np.sqrt(R)
-    mask = (rho > densityFloor * 2)
+    # mask = (rho > densityFloor * 2)
+    mask = (rho > 0)
 
     # mass plots ----------------------------------------------------------------------------------------------------------------------------------------
     # fig, axs = plt.subplots(1, 2, figsize=(10, 5))
@@ -667,7 +674,9 @@ for n in range(n_vtk):
         "q_phi": v_phi*mask,
         "title_r": r"$v_r$ $[$Code Units$]$",
         "title_th": r"$v_\theta$ $[$Code Units$]$",
-        "title_phi": r"$v_\varphi$ $[$Code Units$]$"
+        "title_phi": r"$v_\varphi$ $[$Code Units$]$",
+        "rho": rho,
+        "densityFloor": densityFloor
     }
     VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, False, velocity_plots, f"velocity_{n}", t[n_analysis])
     VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, True, velocity_zoom_plots, f"velocity_zoom_{n}", t[n_analysis])
@@ -691,7 +700,9 @@ for n in range(n_vtk):
         "q_phi": Vcrossh_phi*mask,
         "title_r": r'$(v\times h)_r$ $[$Code Units$]$',
         "title_th": r'$(v\times h)_\theta$ $[$Code Units$]$',
-        "title_phi": r'$(v\times h)_\varphi$ $[$Code Units$]$'
+        "title_phi": r'$(v\times h)_\varphi$ $[$Code Units$]$',
+        "rho": rho,
+        "densityFloor": densityFloor
     }
     VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, True, source_term_plots, f"source_term_{n}", t[n_analysis])
 MOVIE(mass_plots, "mass")
