@@ -101,7 +101,7 @@ kappa2_thp_PLOT = np.zeros((n_vtk, n_r))
 
 equilibrium_plots = []
 for n in range(n_vtk):
-    r_vtk, theta_vtk, phi_vtk, rho, v_r, v_theta, v_phi = READ_VTK(n)
+    r_vtk, theta_vtk, phi_vtk, rho, v_r, v_theta, v_phi, _ = READ_VTK(n)
 
     midplane = np.where(theta_vtk >= np.pi/2)[0][0]
     rho = rho[0,midplane,:]
@@ -448,7 +448,7 @@ plt.close()
 # ----------------------------------------------------------------------------------
 # First vtk velocity
 # ----------------------------------------------------------------------------------
-r_vtk, theta_vtk, phi_vtk, rho, v_r, v_theta, v_phi = READ_VTK(0)
+r_vtk, theta_vtk, phi_vtk, rho, v_r, v_theta, v_phi, _ = READ_VTK(0)
 R, TH = np.meshgrid(r_vtk, theta_vtk)
 phi_cut_plus = np.where(phi_vtk >= 0)[0][0]
 X_cut_plus, Z = R*np.sin(TH)*np.cos(phi_vtk[phi_cut_plus]), R*np.cos(TH)
@@ -596,10 +596,12 @@ mass_zoom_plots = []
 velocity_plots = []
 velocity_zoom_plots = []
 source_term_plots = []
+InvDT_plots = []
+InvDT_zoom_plots = []
 
 for n in range(n_vtk):
     n_analysis = int(n * conf["Output"]["vtk"] // conf["Output"]["analysis"])
-    r_vtk, theta_vtk, phi_vtk, rho, v_r, v_theta, v_phi = READ_VTK(n)
+    r_vtk, theta_vtk, phi_vtk, rho, v_r, v_theta, v_phi, InvDT = READ_VTK(n)
     PHI, TH, R = np.meshgrid(phi_vtk, theta_vtk, r_vtk, indexing="ij")
 
     c_s = epsilon / np.sqrt(R)
@@ -705,8 +707,18 @@ for n in range(n_vtk):
         "densityFloor": densityFloor
     }
     VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, True, source_term_plots, f"source_term_{n}", t[n_analysis])
+
+    if n > 0:
+        quantities = {
+            "InvDT": InvDT
+        }
+        INVDT_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, False, InvDT_plots, f"InvDT_{n}", t[n_analysis])
+        INVDT_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, True, InvDT_zoom_plots, f"InvDT_zoom_{n}", t[n_analysis])
+
 MOVIE(mass_plots, "mass")
 MOVIE(mass_zoom_plots, "mass_zoom")
 MOVIE(velocity_plots, "velocity")
 MOVIE(velocity_zoom_plots, "velocity_zoom")
 MOVIE(source_term_plots, "source_term")
+MOVIE(InvDT_plots, "InvDT")
+MOVIE(InvDT_zoom_plots, "InvDT_zoom")

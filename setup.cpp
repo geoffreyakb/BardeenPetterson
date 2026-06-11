@@ -156,6 +156,25 @@ void PaczynskiWiitaPotential(DataBlock &data, const real t, IdefixArray1D<real> 
     });
 }
 
+void ComputeUserVars(DataBlock & data, UserDefVariablesContainer &variables) {
+    DataBlockHost d(data);
+    d.SyncFromDevice();
+
+    IdefixArray3D<real> scrh("Scratch", data.np_tot[KDIR], data.np_tot[JDIR], data.np_tot[IDIR]);
+    IdefixArray3D<real>::HostMirror scrhHost = Kokkos::create_mirror_view(scrh);
+    Kokkos::deep_copy(scrhHost,scrh);
+
+    IdefixHostArray3D<real> InvDt  = variables["InvDt"];
+
+    for(int k = d.beg[KDIR]; k < d.end[KDIR] ; k++) {
+        for(int j = d.beg[JDIR]; j < d.end[JDIR] ; j++) {
+            for(int i = d.beg[IDIR]; i < d.end[IDIR] ; i++) {
+                InvDt(k,j,i) = d.InvDt(k,j,i);
+            }
+        }
+    }
+}
+
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
     epsilonGlob = input.Get<real>("Setup", "epsilon", 0);
     alphaGlob = input.Get<real>("Setup", "alpha", 0);
@@ -186,6 +205,7 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
 
     analysis = new Analysis(input, grid, data);
     output.EnrollAnalysis(&AnalysisFunction);
+    output.EnrollUserDefVariables(&ComputeUserVars);
 }
 
 void Setup::InitFlow(DataBlock &data) {
