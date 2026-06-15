@@ -408,6 +408,8 @@ velocity_yz_plots = []
 velocity_zoom_yz_plots = []
 sourceTerm_zoom_xz_plots = []
 sourceTerm_zoom_yz_plots = []
+InvDT_plots = []
+InvDT_zoom_plots = []
 
 # max_vr = 0
 # max_vth = 0
@@ -447,7 +449,7 @@ sourceTerm_zoom_yz_plots = []
 
 for n in range(n_vtk):
     n_analysis = int(n * conf["Output"]["vtk"] // conf["Output"]["analysis"])
-    r_vtk, theta_vtk, phi_vtk, rho, v_r, v_theta, v_phi = READ_VTK(n)
+    r_vtk, theta_vtk, phi_vtk, rho, v_r, v_theta, v_phi, InvDT = READ_VTK(n)
     PHI, TH, R = np.meshgrid(phi_vtk, theta_vtk, r_vtk, indexing="ij")
 
     c_s = epsilon / np.sqrt(R)
@@ -517,6 +519,15 @@ for n in range(n_vtk):
     VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, "xz", True, sourceTerm_zoom_xz_plots, f"sourceTerm_zoom_xz_{n}", t[n_analysis])
     VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, "yz", True, sourceTerm_zoom_yz_plots, f"sourceTerm_zoom_yz_{n}", t[n_analysis])
 
+    if n > 0:
+        quantities = {
+            "InvDT": InvDT,
+            "beta_0": beta_0,
+            "r_norm": r_norm
+        }
+        INVDT_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, False, InvDT_plots, f"InvDT_{n}", t[n_analysis])
+        INVDT_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, True, InvDT_zoom_plots, f"InvDT_zoom_{n}", t[n_analysis])
+
 MOVIE(mass_plots, "mass")
 MOVIE(mass_zoom_plots, "mass_zoom")
 MOVIE(velocity_xz_plots, "velocity_xz")
@@ -525,3 +536,5 @@ MOVIE(velocity_yz_plots, "velocity_yz")
 MOVIE(velocity_zoom_yz_plots, "velocity_zoom_yz")
 MOVIE(sourceTerm_zoom_xz_plots, "sourceTerm_zoom_xz")
 MOVIE(sourceTerm_zoom_yz_plots, "sourceTerm_zoom_yz")
+MOVIE(InvDT_plots, "InvDT")
+MOVIE(InvDT_zoom_plots, "InvDT_zoom")

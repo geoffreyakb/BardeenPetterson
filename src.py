@@ -86,11 +86,12 @@ def READ_RADIAL_AVERAGE(n_average, n_r, beta_0):
     return V["r"], Sigma, rho, L, beta, gamma, LBH, betaBH, gammaBH, rho_Vr, rho_Vperp
 
 def READ_VTK(n_vtk):
-    NVAR = 4
+    NVAR = 5
     RHO = 0
     VX1 = 1
     VX2 = 2
     VX3 = 3
+    INVDT = 4
 
     if n_vtk >= 1000:
         current_number = str(n_vtk)
@@ -111,13 +112,15 @@ def READ_VTK(n_vtk):
     vtk[VX1,:,:,:] = np.moveaxis(current_VTK.data['VX1'], [0, 2], [2, 0])
     vtk[VX2,:,:,:] = np.moveaxis(current_VTK.data['VX2'], [0, 2], [2, 0])
     vtk[VX3,:,:,:] = np.moveaxis(current_VTK.data['VX3'], [0, 2], [2, 0])
+    vtk[INVDT,:,:,:] = np.moveaxis(current_VTK.data['InvDt'], [0, 2], [2, 0])
 
     rho = vtk[RHO,:,:,:]
     v_r = vtk[VX1,:,:,:]
     v_theta = vtk[VX2,:,:,:]
     v_phi = vtk[VX3,:,:,:]
+    InvDT = vtk[INVDT,:,:,:]
 
-    return r_vtk, theta_vtk, phi_vtk, rho, v_r, v_theta, v_phi
+    return r_vtk, theta_vtk, phi_vtk, rho, v_r, v_theta, v_phi, InvDT
 
 def MOVIE(plots, name):
     fourcc = cv2.VideoWriter_fourcc(*"mp4v")
@@ -144,8 +147,6 @@ def MASS_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, zoom, list_pl
     X_cut_plus, X_cut_minus, Z = R*np.sin(TH)*np.cos(phi_vtk[phi_cut_plus]), R*np.sin(TH)*np.cos(phi_vtk[phi_cut_minus]), R*np.cos(TH)
     x_label = r"$x$ [$r_g$]"
     y_label = r"$z$ [$r_g$]"
-    x_plus = X_cut_plus.flatten()
-    x_minus = X_cut_minus.flatten()
     ax = axs[0]
     ax.set_title(r'$\log(\rho)$ $[$Code Units$]$')
     ticks = np.linspace(np.log10(densityFloor), 0, 5)
@@ -153,14 +154,8 @@ def MASS_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, zoom, list_pl
     pc0 = ax.pcolormesh(X_cut_minus, Z, np.log10(rho[phi_cut_minus,:,:]), cmap="jet", vmin=np.log10(densityFloor), vmax=0)
     formats = tkr.FormatStrFormatter('%.0f')
     cbar = fig.colorbar(pc0, ax=ax, location="bottom", pad=pad, shrink=shrink, format=formats, ticks=ticks)
-    if (beta_0 != 0):
-        wh = (x_plus > r_min/np.sqrt(1 + 1/np.sin(-beta_0)**2)) & (x_plus < r_max/np.sqrt(1 + 1/np.sin(-beta_0)**2))
-        ax.plot(x_plus[wh], x_plus[wh]/np.sin(-beta_0), color="black")
-        wh = (x_minus < -r_min/np.sqrt(1 + 1/np.sin(-beta_0)**2)) & (x_minus > -r_max/np.sqrt(1 + 1/np.sin(-beta_0)**2))
-        ax.plot(x_minus[wh], x_minus[wh]/np.sin(-beta_0), color="black")
-    else:
-        ax.vlines(0, -r_max, -r_min, color="black")
-        ax.vlines(0, r_min, r_max, color="black")
+    z = np.linspace(-r_max, r_max, int(1e3))
+    ax.plot(np.sin(-beta_0)*z, np.cos(-beta_0)*z, color="black")
     ax.tick_params(axis='both', direction='in', color='white', width=w, length=l, pad=lpad)
     ax.set_facecolor("black")
     ax.set_xlabel(x_label)
@@ -193,8 +188,6 @@ def MASS_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, zoom, list_pl
     X_cut_plus, X_cut_minus, Z = R*np.sin(TH)*np.sin(phi_vtk[phi_cut_plus]), R*np.sin(TH)*np.sin(phi_vtk[phi_cut_minus]), R*np.cos(TH)
     x_label = r"$y$ [$r_g$]"
     y_label = r"$z$ [$r_g$]"
-    x_plus = X_cut_plus.flatten()
-    x_minus = X_cut_minus.flatten()
     ax = axs[1]
     ax.set_title(r'$\log(\rho)$ $[$Code Units$]$')
     ticks = np.linspace(np.log10(densityFloor), 0, 5)
@@ -202,8 +195,8 @@ def MASS_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, zoom, list_pl
     pc0 = ax.pcolormesh(X_cut_minus, Z, np.log10(rho[phi_cut_minus,:,:]), cmap="jet", vmin=np.log10(densityFloor), vmax=0)
     formats = tkr.FormatStrFormatter('%.0f')
     cbar = fig.colorbar(pc0, ax=ax, location="bottom", pad=pad, shrink=shrink, format=formats, ticks=ticks)
-    ax.vlines(0, -r_max, -r_min, color="black")
-    ax.vlines(0, r_min, r_max, color="black")
+    z = np.linspace(-r_max, r_max, int(1e3))
+    ax.plot(0*z, np.cos(-beta_0)*z, color="black")
     ax.tick_params(axis='both', direction='in', color='white', width=w, length=l, pad=lpad)
     ax.set_facecolor("black")
     ax.set_xlabel(x_label)
@@ -267,8 +260,6 @@ def VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, cut, zoom
         X_cut_plus, X_cut_minus, Z = R*np.sin(TH)*np.sin(phi_vtk[phi_cut_plus]), R*np.sin(TH)*np.sin(phi_vtk[phi_cut_minus]), R*np.cos(TH)
         x_label = r"$y$ [$r_g$]"
     y_label = r"$z$ [$r_g$]"
-    x_plus = X_cut_plus.flatten()
-    x_minus = X_cut_minus.flatten()
     # ------------------------------------------------------------------------------------------------------------------------------------
     fig, axs = plt.subplots(1, 3, gridspec_kw={'wspace': 0.01}, figsize=(15, 6.5))
 
@@ -277,21 +268,19 @@ def VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, cut, zoom
     # buff = np.max(np.abs(q_r))
     buff = buff_r
     ticks = np.linspace(-buff, buff, 5)
-    pc0 = ax.pcolormesh(X_cut_plus, Z, q_r[phi_cut_plus,:,:], cmap="coolwarm", vmin=-buff, vmax=buff)
-    pc0 = ax.pcolormesh(X_cut_minus, Z, q_r[phi_cut_minus,:,:], cmap="coolwarm", vmin=-buff, vmax=buff)
+    pc0 = ax.pcolormesh(X_cut_plus, Z, q_r[phi_cut_plus,:,:], cmap="RdYlBu_r", vmin=-buff, vmax=buff)
+    pc0 = ax.pcolormesh(X_cut_minus, Z, q_r[phi_cut_minus,:,:], cmap="RdYlBu_r", vmin=-buff, vmax=buff)
     ax.contour(X_cut_plus, Z, rho[phi_cut_plus,:,:], levels=[densityFloor*2], alpha=0.75)
     ax.contour(X_cut_minus, Z, rho[phi_cut_minus,:,:], levels=[densityFloor*2], alpha=0.75)
     formats = tkr.FormatStrFormatter('%.1e')
     cbar = fig.colorbar(pc0, ax=ax, location="bottom", pad=pad, shrink=shrink, format=formats, ticks=ticks)
-    if cut == "xz" and (beta_0 != 0):
-        wh = (x_plus > r_min/np.sqrt(1 + 1/np.sin(-beta_0)**2)) & (x_plus < r_max/np.sqrt(1 + 1/np.sin(-beta_0)**2))
-        ax.plot(x_plus[wh], x_plus[wh]/np.sin(-beta_0), color="black")
-        wh = (x_minus < -r_min/np.sqrt(1 + 1/np.sin(-beta_0)**2)) & (x_minus > -r_max/np.sqrt(1 + 1/np.sin(-beta_0)**2))
-        ax.plot(x_minus[wh], x_minus[wh]/np.sin(-beta_0), color="black")
-    else:
-        ax.vlines(0, -r_max, -r_min, color="black")
-        ax.vlines(0, r_min, r_max, color="black")
-    ax.tick_params(axis='both', direction='in', color='white', width=w, length=l, pad=lpad)
+    if cut == "xz":
+        z = np.linspace(-r_max, r_max, int(1e3))
+        ax.plot(np.sin(-beta_0)*z, np.cos(-beta_0)*z, color="black")
+    elif cut == "yz":
+        z = np.linspace(-r_max, r_max, int(1e3))
+        ax.plot(0*z, np.cos(-beta_0)*z, color="black")
+    ax.tick_params(axis='both', direction='in', color='black', width=w, length=l, pad=lpad)
     ax.set_facecolor("black")
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label, labelpad=3)
@@ -323,21 +312,19 @@ def VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, cut, zoom
     # buff = np.max(np.abs(q_th))
     buff = buff_th
     ticks = np.linspace(-buff, buff, 5)
-    pc0 = ax.pcolormesh(X_cut_plus, Z, q_th[phi_cut_plus,:,:], cmap="coolwarm", vmin=-buff, vmax=buff)
-    pc0 = ax.pcolormesh(X_cut_minus, Z, q_th[phi_cut_minus,:,:], cmap="coolwarm", vmin=-buff, vmax=buff)
-    ax.contour(X_cut_plus, Z, rho[phi_cut_plus,:,:], levels=[densityFloor*1.01], alpha=0.75)
-    ax.contour(X_cut_minus, Z, rho[phi_cut_minus,:,:], levels=[densityFloor*1.01], alpha=0.75)
+    pc0 = ax.pcolormesh(X_cut_plus, Z, q_th[phi_cut_plus,:,:], cmap="RdYlBu_r", vmin=-buff, vmax=buff)
+    pc0 = ax.pcolormesh(X_cut_minus, Z, q_th[phi_cut_minus,:,:], cmap="RdYlBu_r", vmin=-buff, vmax=buff)
+    ax.contour(X_cut_plus, Z, rho[phi_cut_plus,:,:], levels=[densityFloor*2], alpha=0.75)
+    ax.contour(X_cut_minus, Z, rho[phi_cut_minus,:,:], levels=[densityFloor*2], alpha=0.75)
     formats = tkr.FormatStrFormatter('%.1e')
     cbar = fig.colorbar(pc0, ax=ax, location="bottom", pad=pad, shrink=shrink, format=formats, ticks=ticks)
-    if cut == "xz" and (beta_0 != 0):
-        wh = (x_plus > r_min/np.sqrt(1 + 1/np.sin(-beta_0)**2)) & (x_plus < r_max/np.sqrt(1 + 1/np.sin(-beta_0)**2))
-        ax.plot(x_plus[wh], x_plus[wh]/np.sin(-beta_0), color="black")
-        wh = (x_minus < -r_min/np.sqrt(1 + 1/np.sin(-beta_0)**2)) & (x_minus > -r_max/np.sqrt(1 + 1/np.sin(-beta_0)**2))
-        ax.plot(x_minus[wh], x_minus[wh]/np.sin(-beta_0), color="black")
-    else:
-        ax.vlines(0, -r_max, -r_min, color="black")
-        ax.vlines(0, r_min, r_max, color="black")
-    ax.tick_params(axis='both', direction='in', color='white', width=w, length=l, pad=lpad)
+    if cut == "xz":
+        z = np.linspace(-r_max, r_max, int(1e3))
+        ax.plot(np.sin(-beta_0)*z, np.cos(-beta_0)*z, color="black")
+    elif cut == "yz":
+        z = np.linspace(-r_max, r_max, int(1e3))
+        ax.plot(0*z, np.cos(-beta_0)*z, color="black")
+    ax.tick_params(axis='both', direction='in', color='black', width=w, length=l, pad=lpad)
     ax.set_facecolor("black")
     ax.set_xlabel(x_label)
     if zoom == True:
@@ -370,20 +357,119 @@ def VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, cut, zoom
     # buff = np.max(np.abs(q_phi))
     buff = buff_phi
     ticks = np.linspace(-buff, buff, 5)
-    pc0 = ax.pcolormesh(X_cut_plus, Z, q_phi[phi_cut_plus,:,:], cmap="coolwarm", vmin=-buff, vmax=buff)
-    pc0 = ax.pcolormesh(X_cut_minus, Z, q_phi[phi_cut_minus,:,:], cmap="coolwarm", vmin=-buff, vmax=buff)
-    ax.contour(X_cut_plus, Z, rho[phi_cut_plus,:,:], levels=[densityFloor], alpha=0.75)
-    ax.contour(X_cut_minus, Z, rho[phi_cut_minus,:,:], levels=[densityFloor], alpha=0.75)
+    pc0 = ax.pcolormesh(X_cut_plus, Z, q_phi[phi_cut_plus,:,:], cmap="RdYlBu_r", vmin=-buff, vmax=buff)
+    pc0 = ax.pcolormesh(X_cut_minus, Z, q_phi[phi_cut_minus,:,:], cmap="RdYlBu_r", vmin=-buff, vmax=buff)
+    ax.contour(X_cut_plus, Z, rho[phi_cut_plus,:,:], levels=[densityFloor*2], alpha=0.75)
+    ax.contour(X_cut_minus, Z, rho[phi_cut_minus,:,:], levels=[densityFloor*2], alpha=0.75)
     formats = tkr.FormatStrFormatter('%.1e')
     cbar = fig.colorbar(pc0, ax=ax, location="bottom", pad=pad, shrink=shrink, format=formats, ticks=ticks)
-    if cut == "xz" and (beta_0 != 0):
-        wh = (x_plus > r_min/np.sqrt(1 + 1/np.sin(-beta_0)**2)) & (x_plus < r_max/np.sqrt(1 + 1/np.sin(-beta_0)**2))
-        ax.plot(x_plus[wh], x_plus[wh]/np.sin(-beta_0), color="black")
-        wh = (x_minus < -r_min/np.sqrt(1 + 1/np.sin(-beta_0)**2)) & (x_minus > -r_max/np.sqrt(1 + 1/np.sin(-beta_0)**2))
-        ax.plot(x_minus[wh], x_minus[wh]/np.sin(-beta_0), color="black")
-    else:
-        ax.vlines(0, -r_max, -r_min, color="black")
-        ax.vlines(0, r_min, r_max, color="black")
+    if cut == "xz":
+        z = np.linspace(-r_max, r_max, int(1e3))
+        ax.plot(np.sin(-beta_0)*z, np.cos(-beta_0)*z, color="black")
+    elif cut == "yz":
+        z = np.linspace(-r_max, r_max, int(1e3))
+        ax.plot(0*z, np.cos(-beta_0)*z, color="black")
+    ax.tick_params(axis='both', direction='in', color='black', width=w, length=l, pad=lpad)
+    ax.set_facecolor("black")
+    ax.set_xlabel(x_label)
+    ax.set_ylabel(y_label, labelpad=3)
+    if zoom == True:
+        ax.set_xlim((-3*r_min,3*r_min))
+        xplot = np.linspace(-3*r_min, 3*r_min, 5)
+        xl = [f"{i:.1f}" for i in xplot]
+        xl[0] = ""
+        xl[-1] = ""
+        ax.set_xticks(xplot,xl)
+        ax.set_ylim((-3*r_min, 3*r_min))
+        ax.set_yticks(xplot)
+    elif zoom == False:
+        ax.set_xlim((-r_max,r_max))
+        xplot = np.linspace(-r_max, r_max, 5)
+        xl = [f"{i:.0f}" for i in xplot]
+        xl[0] = ""
+        xl[-1] = ""
+        ax.set_xticks(xplot,xl)
+        ax.set_ylim((-r_max, r_max))
+        ax.set_yticks(xplot)
+    ax.yaxis.set_label_position("right")
+    ax.yaxis.tick_right()
+    ax.yaxis.set_ticks_position('both')
+    ax.xaxis.set_ticks_position('both')
+    for spine in ax.spines.values():
+        spine.set_linewidth(w)
+
+    fig.suptitle(rf"$t\Omega_0(r={r_norm}r_g) =$ " + f"{time:.0f}")
+    fig.tight_layout()
+    plt.savefig(f"./output/plots/{plots_name}.png", bbox_inches='tight', dpi=300)
+    plt.close()
+    list_plots.append(f"./output/plots/{plots_name}.png")
+
+def INVDT_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, zoom, list_plots, plots_name, time):
+    InvDT = quantities["InvDT"]
+    beta_0 = quantities["beta_0"]
+    r_norm = quantities["r_norm"]
+
+    R, TH = np.meshgrid(r_vtk, theta_vtk)
+
+    fig, axs = plt.subplots(1, 2, figsize=(10, 6.5))
+    
+    phi_cut_plus = np.where(phi_vtk >= 0)[0][0]
+    phi_cut_minus = np.where(phi_vtk >= np.pi)[0][0]
+    X_cut_plus, X_cut_minus, Z = R*np.sin(TH)*np.cos(phi_vtk[phi_cut_plus]), R*np.sin(TH)*np.cos(phi_vtk[phi_cut_minus]), R*np.cos(TH)
+    x_label = r"$x$ [$r_g$]"
+    y_label = r"$z$ [$r_g$]"
+    ax = axs[0]
+    ax.set_title(r'$\log(1/dt)$ $[$Code Units$]$')
+    buff = np.max(np.abs(np.log10(InvDT)))
+    ticks = np.linspace(-buff, buff, 5)
+    pc0 = ax.pcolormesh(X_cut_plus, Z, np.log10(InvDT[phi_cut_plus,:,:]), cmap="jet", vmin=-buff, vmax=buff)
+    pc0 = ax.pcolormesh(X_cut_minus, Z, np.log10(InvDT[phi_cut_minus,:,:]), cmap="jet", vmin=-buff, vmax=buff)
+    formats = tkr.FormatStrFormatter('%.1f')
+    cbar = fig.colorbar(pc0, ax=ax, location="bottom", pad=pad, shrink=shrink, format=formats, ticks=ticks)
+    z = np.linspace(-r_max, r_max, int(1e3))
+    ax.plot(np.sin(-beta_0)*z, np.cos(-beta_0)*z, color="black")
+    ax.tick_params(axis='both', direction='in', color='white', width=w, length=l, pad=lpad)
+    ax.set_facecolor("black")
+    ax.set_xlabel(x_label)
+    ax.set_ylabel(y_label, labelpad=3)
+    if zoom == True:
+        ax.set_xlim((-3*r_min,3*r_min))
+        xplot = np.linspace(-3*r_min, 3*r_min, 5)
+        xl = [f"{i:.1f}" for i in xplot]
+        xl[0] = ""
+        xl[-1] = ""
+        ax.set_xticks(xplot,xl)
+        ax.set_ylim((-3*r_min, 3*r_min))
+        ax.set_yticks(xplot)
+    elif zoom == False:
+        ax.set_xlim((-r_max,r_max))
+        xplot = np.linspace(-r_max, r_max, 5)
+        xl = [f"{i:.0f}" for i in xplot]
+        xl[0] = ""
+        xl[-1] = ""
+        ax.set_xticks(xplot,xl)
+        ax.set_ylim((-r_max, r_max))
+        ax.set_yticks(xplot)
+    ax.yaxis.set_ticks_position('both')
+    ax.xaxis.set_ticks_position('both')
+    for spine in ax.spines.values():
+        spine.set_linewidth(w)
+
+    phi_cut_plus = np.where(phi_vtk >= np.pi/2)[0][0]
+    phi_cut_minus = np.where(phi_vtk >= 3*np.pi/2)[0][0]
+    X_cut_plus, X_cut_minus, Z = R*np.sin(TH)*np.sin(phi_vtk[phi_cut_plus]), R*np.sin(TH)*np.sin(phi_vtk[phi_cut_minus]), R*np.cos(TH)
+    x_label = r"$y$ [$r_g$]"
+    y_label = r"$z$ [$r_g$]"
+    ax = axs[1]
+    ax.set_title(r'$\log(1/dt)$ $[$Code Units$]$')
+    buff = np.max(np.abs(np.log10(InvDT)))
+    ticks = np.linspace(-buff, buff, 5)
+    pc0 = ax.pcolormesh(X_cut_plus, Z, np.log10(InvDT[phi_cut_plus,:,:]), cmap="jet", vmin=-buff, vmax=buff)
+    pc0 = ax.pcolormesh(X_cut_minus, Z, np.log10(InvDT[phi_cut_minus,:,:]), cmap="jet", vmin=-buff, vmax=buff)
+    formats = tkr.FormatStrFormatter('%.1f')
+    cbar = fig.colorbar(pc0, ax=ax, location="bottom", pad=pad, shrink=shrink, format=formats, ticks=ticks)
+    z = np.linspace(-r_max, r_max, int(1e3))
+    ax.plot(0*z, np.cos(-beta_0)*z, color="black")
     ax.tick_params(axis='both', direction='in', color='white', width=w, length=l, pad=lpad)
     ax.set_facecolor("black")
     ax.set_xlabel(x_label)
@@ -418,6 +504,7 @@ def VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, cut, zoom
     plt.savefig(f"./output/plots/{plots_name}.png", bbox_inches='tight', dpi=300)
     plt.close()
     list_plots.append(f"./output/plots/{plots_name}.png")
+
 
 def KEPLER(r_vtk):
     return np.sqrt(1/r_vtk**3)
