@@ -103,6 +103,8 @@ void GravitomagneticTerm(Hydro *hydro, const real t, const real dtin) {
     real Sx = spin * sin(-tilt);
     real Sy = ZERO_F;
     real Sz = spin * cos(-tilt);
+    
+    real densityFloor = densityFloorGlob;
 
     idefix_for("GravitomagneticTerm",
         0, data->np_tot[KDIR],
@@ -129,6 +131,11 @@ void GravitomagneticTerm(Hydro *hydro, const real t, const real dtin) {
             Uc(MX1,k,j,i) += dt * Vc(RHO,k,j,i) * Vcrossh_r;
             Uc(MX2,k,j,i) += dt * Vc(RHO,k,j,i) * Vcrossh_th;
             Uc(MX3,k,j,i) += dt * Vc(RHO,k,j,i) * Vcrossh_phi;
+
+            real q = Vc(RHO,k,j,i) / densityFloor;
+            real fact = 1/(1+exp(q*q)); // Smoothly goes to 0 for q>>1 and to 1 for q<<1
+            Uc(MX1,k,j,i) -= dt * 10*fact * Vc(RHO,k,j,i) * Vc(VX1,k,j,i);
+            Uc(MX2,k,j,i) -= dt * 10*fact * Vc(RHO,k,j,i) * Vc(VX2,k,j,i);
     });
 }
 
