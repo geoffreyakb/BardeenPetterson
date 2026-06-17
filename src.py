@@ -123,7 +123,7 @@ def READ_VTK(n_vtk):
     return r_vtk, theta_vtk, phi_vtk, rho, v_r, v_theta, v_phi, InvDT
 
 def MOVIE(plots, name):
-    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     fps = 20
     images = plots
     height, width, _ = cv2.imread(images[0]).shape
@@ -228,7 +228,7 @@ def MASS_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, zoom, list_pl
 
     fig.suptitle(rf"$t\Omega_0(r={r_norm}r_g) =$ " + f"{time:.0f}")
     fig.tight_layout()
-    plt.savefig(f"./output/plots/{plots_name}.png", bbox_inches='tight', dpi=300)
+    plt.savefig(f"./output/plots/{plots_name}.png", bbox_inches='tight', dpi=200)
     plt.close()
     list_plots.append(f"./output/plots/{plots_name}.png")
 
@@ -400,7 +400,7 @@ def VELOCITY_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, cut, zoom
 
     fig.suptitle(rf"$t\Omega_0(r={r_norm}r_g) =$ " + f"{time:.0f}")
     fig.tight_layout()
-    plt.savefig(f"./output/plots/{plots_name}.png", bbox_inches='tight', dpi=300)
+    plt.savefig(f"./output/plots/{plots_name}.png", bbox_inches='tight', dpi=200)
     plt.close()
     list_plots.append(f"./output/plots/{plots_name}.png")
 
@@ -501,7 +501,7 @@ def INVDT_PLOT(r_vtk, r_min, r_max, theta_vtk, phi_vtk, quantities, zoom, list_p
 
     fig.suptitle(rf"$t\Omega_0(r={r_norm}r_g) =$ " + f"{time:.0f}")
     fig.tight_layout()
-    plt.savefig(f"./output/plots/{plots_name}.png", bbox_inches='tight', dpi=300)
+    plt.savefig(f"./output/plots/{plots_name}.png", bbox_inches='tight', dpi=200)
     plt.close()
     list_plots.append(f"./output/plots/{plots_name}.png")
 

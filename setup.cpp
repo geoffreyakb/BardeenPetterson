@@ -154,6 +154,17 @@ void ComputeUserVars(DataBlock & data, UserDefVariablesContainer &variables) {
     }
 }
 
+void CoarsenFunction(DataBlock &data) {
+    IdefixArray2D<int> coarseningLevel = data.coarseningLevel[KDIR];
+    IdefixArray1D<real> th = data.x[JDIR];
+    idefix_for("set_coarsening", 0, data.np_tot[JDIR], 0, data.np_tot[IDIR],
+                KOKKOS_LAMBDA(int j, int i) {
+                    int c = 1.0 / std::abs(sin(th(j)));
+                    if(c > 6) c = 6;
+                    coarseningLevel(j,i) = c;
+                });
+}
+
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
     epsilonGlob = input.Get<real>("Setup", "epsilon", 0);
     alphaGlob = input.Get<real>("Setup", "alpha", 0);
@@ -185,6 +196,9 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
     analysis = new Analysis(input, grid, data);
     output.EnrollAnalysis(&AnalysisFunction);
     output.EnrollUserDefVariables(&ComputeUserVars);
+    if(data.haveGridCoarsening) {
+      data.EnrollGridCoarseningLevels(&CoarsenFunction);
+    }
 }
 
 void Setup::InitFlow(DataBlock &data) {

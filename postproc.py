@@ -35,7 +35,7 @@ r, Sigma, rho_mean, L, beta, gamma, LBH, betaBH, gammaBH, rho_Vr, rho_Vperp = RE
 # Normalizations and useful quantities
 # ----------------------------------------------------------------------------------
 # Time
-r_norm = 5
+r_norm = 25
 grad_Phi = 0
 if gravity == "Kepler":
     grad_Phi = 1/r_norm**2
