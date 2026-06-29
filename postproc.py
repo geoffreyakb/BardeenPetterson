@@ -24,6 +24,7 @@ epsilon = conf["Setup"]["epsilon"]
 alpha = conf["Setup"]["alpha"]
 densityFloor = conf["Setup"]["densityFloor"]
 gravity = conf["Setup"]["gravity"]
+referential = conf["Setup"]["referential"]
 beta_0 = conf["Setup"]["tilt"] * np.pi/180
 spin = conf["Setup"]["spin"]
 
